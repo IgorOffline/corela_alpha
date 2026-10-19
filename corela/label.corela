@@ -1,0 +1,12 @@
+static void draw_label(char label, float x, float y)
+di
+  const stbtt_bakedchar *glyph = &glyphs[(unsigned char)label - 32u];
+  float pen_x = x - glyph->xoff;
+  float pen_y = y - glyph->yoff;
+  stbtt_aligned_quad quad;
+  stbtt_GetBakedQuad(glyphs, 256, 256, (int)label - 32, &pen_x, &pen_y, &quad, 1);
+  sgl_v2f_t2f(quad.x0, quad.y0, quad.s0, quad.t0);
+  sgl_v2f_t2f(quad.x1, quad.y0, quad.s1, quad.t0);
+  sgl_v2f_t2f(quad.x1, quad.y1, quad.s1, quad.t1);
+  sgl_v2f_t2f(quad.x0, quad.y1, quad.s0, quad.t1);
+do

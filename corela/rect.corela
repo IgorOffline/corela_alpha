@@ -1,0 +1,7 @@
+static void draw_rect(float x, float y, float w, float h)
+di
+  sgl_v2f(x, y);
+  sgl_v2f(x + w, y);
+  sgl_v2f(x + w, y + h);
+  sgl_v2f(x, y + h);
+do

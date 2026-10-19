@@ -1,0 +1,144 @@
+include <stdint.h>
+include <stdio.h>
+include <stdlib.h>
+include "corela_shift.h"
+include "bpmn_gfx.h"
+
+static sg_pass_action pass_action;
+static stbtt_bakedchar glyphs[96];
+static sg_image font_image;
+static sg_view font_view;
+static sg_sampler font_sampler;
+static sgl_pipeline font_pipeline;
+
+inject_raw file_from_current font.corela
+inject_raw file_from_current label.corela
+inject_raw file_from_current rect.corela
+
+static void draw_grid(void)
+di
+  const float x = ((float)WINDOW_W - GRID_W) / 2.0f;
+  const float y = ((float)WINDOW_H - GRID_H) / 2.0f;
+
+  const float cell_w = (GRID_W - GRID_THICKNESS) / (float)GRID_LETTERS;
+  const float cell_h = (GRID_H - GRID_THICKNESS) / (float)GRID_NUMBERS;
+
+  sgl_begin_quads();
+  sgl_c3b(198, 208, 245);
+  for (int letter = 0; letter <= GRID_LETTERS; letter++)
+  di
+    draw_rect(x + (float)letter * cell_w, y, GRID_THICKNESS, GRID_H);
+  do
+  for (int number = 0; number <= GRID_NUMBERS; number++)
+  di
+    draw_rect(x, y + (float)number * cell_h, GRID_W, GRID_THICKNESS);
+  do
+  sgl_end();
+
+  sgl_load_pipeline(font_pipeline);
+  sgl_enable_texture();
+  sgl_texture(font_view, font_sampler);
+  sgl_c3b(198, 208, 245);
+  sgl_begin_quads();
+  for (int number = 0; number < GRID_NUMBERS; number++)
+  di
+    draw_label((char)('0' + GRID_NUMBERS - number), x + GRID_THICKNESS + 4.0f,
+               y + (float)number * cell_h + GRID_THICKNESS + 4.0f);
+  do
+  for (int letter = 0; letter < GRID_LETTERS; letter++)
+  di
+    const char label = (char)('A' + letter);
+    const stbtt_bakedchar *glyph = &glyphs[(unsigned char)label - 32u];
+    draw_label(
+        label,
+        x + (float)(letter + 1) * cell_w - (float)(glyph->x1 - glyph->x0) - 4.0f,
+        y + GRID_H - GRID_THICKNESS - (float)(glyph->y1 - glyph->y0) - 4.0f);
+  do
+  sgl_end();
+  sgl_disable_texture();
+  sgl_load_default_pipeline();
+do
+
+static void init(void)
+di
+  inject_raw file_from_current pidgeon_cat.corela
+
+  sg_setup(&(sg_desc)
+  di
+      .environment = sglue_environment(),
+      .logger.func = slog_func,
+  do
+  );
+
+  sgl_setup(&(sgl_desc_t)
+  di
+    0
+  do
+  );
+  init_font();
+
+  pass_action = (sg_pass_action)
+  di
+      .colors[0] =
+          di
+              .load_action = SG_LOADACTION_CLEAR,
+              .clear_value =
+                  di
+                      .r = 98.0f / 255.0f,
+                      .g = 104.0f / 255.0f,
+                      .b = 128.0f / 255.0f,
+                      .a = 1.0f,
+                  do
+                  ,
+          do
+          ,
+  do
+  ;
+do
+
+static void frame(void)
+di
+  sgl_defaults();
+
+  sgl_matrix_mode_projection();
+  sgl_load_identity();
+  sgl_ortho(0.0f, (float)WINDOW_W, (float)WINDOW_H, 0.0f, -1.0f, 1.0f);
+
+  sgl_matrix_mode_modelview();
+  sgl_load_identity();
+
+  draw_grid();
+
+  sg_begin_pass(&(sg_pass)
+  di
+      .action = pass_action,
+      .swapchain = sglue_swapchain(),
+  do
+  );
+
+  sgl_draw();
+
+  sg_end_pass();
+  sg_commit();
+do
+
+inject_raw file_from_current cleanup.corela
+
+sokol_main
+di
+  (void)argc;
+  (void)argv;
+
+  return (sapp_desc)
+  di
+      .init_cb = init,
+      .frame_cb = frame,
+      .cleanup_cb = cleanup,
+      .width = WINDOW_W,
+      .height = WINDOW_H,
+      .window_title = "hope",
+      .high_dpi = false,
+      .logger.func = slog_func,
+  do
+  ;
+do

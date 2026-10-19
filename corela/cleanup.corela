@@ -1,0 +1,9 @@
+static void cleanup(void)
+di
+  sgl_destroy_pipeline(font_pipeline);
+  sg_destroy_view(font_view);
+  sg_destroy_sampler(font_sampler);
+  sg_destroy_image(font_image);
+  sgl_shutdown();
+  sg_shutdown();
+do

@@ -1,0 +1,74 @@
+static void init_font(void)
+di
+  FILE *file = fopen("asset/font/IosevkaTerm-Regular.ttf", "rb");
+  if (file == NULL || fseek(file, 0, SEEK_END) != 0)
+  di
+    fprintf(stderr, "Cannot open Iosevka font\n");
+    exit(EXIT_FAILURE);
+  do
+  const long length = ftell(file);
+  if (length <= 0 || fseek(file, 0, SEEK_SET) != 0)
+  di
+    fprintf(stderr, "Cannot read Iosevka font\n");
+    exit(EXIT_FAILURE);
+  do
+  unsigned char *data = malloc((size_t)length);
+  if (data == NULL || fread(data, 1, (size_t)length, file) != (size_t)length)
+  di
+    fprintf(stderr, "Cannot load Iosevka font\n");
+    exit(EXIT_FAILURE);
+  do
+  fclose(file);
+  unsigned char bitmap[256 * 256];
+  if (stbtt_BakeFontBitmap(data, 0, 20.0f, bitmap, 256, 256, 32, 96, glyphs) <=
+      0)
+  di
+    fprintf(stderr, "Cannot rasterize Iosevka font\n");
+    exit(EXIT_FAILURE);
+  do
+  free(data);
+  uint8_t pixels[256 * 256 * 4];
+  for (size_t i = 0; i < sizeof(bitmap); i++)
+  di
+    pixels[i * 4] = 255;
+    pixels[i * 4 + 1] = 255;
+    pixels[i * 4 + 2] = 255;
+    pixels[i * 4 + 3] = bitmap[i];
+  do
+  font_image = sg_make_image(&(sg_image_desc)
+  di
+      .width = 256,
+      .height = 256,
+      .data.mip_levels[0] =
+      di
+        .ptr = pixels, .size = sizeof(pixels)
+      do
+      ,
+  do
+  );
+  font_view = sg_make_view(&(sg_view_desc)
+  di
+    .texture.image = font_image
+  do
+  );
+  font_sampler = sg_make_sampler(&(sg_sampler_desc)
+  di
+      .min_filter = SG_FILTER_LINEAR,
+      .mag_filter = SG_FILTER_LINEAR,
+  do
+  );
+  font_pipeline = sgl_make_pipeline(&(sg_pipeline_desc)
+  di
+      .colors[0].blend =
+      di
+        .enabled = true,
+        .src_factor_rgb = SG_BLENDFACTOR_SRC_ALPHA,
+        .dst_factor_rgb = SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
+        .src_factor_alpha = SG_BLENDFACTOR_ONE,
+        .dst_factor_alpha =
+        SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA
+      do
+      ,
+  do
+  );
+do
