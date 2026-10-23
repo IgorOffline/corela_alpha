@@ -6,7 +6,7 @@ fn main() {
         .include("csrc")
         .define("SOKOL_GLCORE", None)
         .warnings(true)
-        .compile("lightshine_sokol");
+        .compile("corela_sokol");
 
     for lib in ["X11", "Xi", "Xcursor", "GL", "dl", "pthread", "m", "c"] {
         println!("cargo:rustc-link-lib={lib}");
