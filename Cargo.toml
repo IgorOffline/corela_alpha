@@ -1,0 +1,26 @@
+[package]
+name = "corela"
+version = "0.1.0"
+edition = "2024"
+build = "build.rs"
+
+[[bin]]
+name = "corela"
+path = "src/main.rs"
+
+[build-dependencies]
+cc = "1"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[patch.crates-io]
+# === === ===
+# sokol (build.rs compiles the sokol headers through cc)
+# === === ===
+cc = { path = "../rust_vendor/cc/current" }
+shlex = { path = "../rust_vendor/shlex/current" }
+find-msvc-tools = { path = "../rust_vendor/find-msvc-tools/current" }
