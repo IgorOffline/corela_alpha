@@ -17,7 +17,7 @@ typedef struct {
   void (*frame)(void);
   void (*cleanup)(void);
   void (*key_down)(int32_t key_code);
-} ls_desc;
+} gfx_desc;
 
 static void (*g_init)(void);
 static void (*g_key_down)(int32_t);
@@ -66,7 +66,7 @@ static void on_cleanup_wrapped(void) {
   on_cleanup();
 }
 
-int32_t ls_run(const ls_desc* d) {
+int32_t gfx_run(const gfx_desc* d) {
   g_init = d->init;
   g_key_down = d->key_down;
   g_user_cleanup = d->cleanup;
@@ -84,7 +84,7 @@ int32_t ls_run(const ls_desc* d) {
   return 0;
 }
 
-void ls_quit(void) { sapp_request_quit(); }
+void gfx_quit(void) { sapp_request_quit(); }
 
 static const char* const VS_SRC =
     "#version 330\n"
@@ -110,7 +110,7 @@ static float g_shape_vertices[262144][5];
 static int g_shape_vertex_count;
 static sg_pass_action g_pass_action;
 
-void ls_renderer_init(float clear_r, float clear_g, float clear_b) {
+void gfx_renderer_init(float clear_r, float clear_g, float clear_b) {
   g_shape_buffer = sg_make_buffer(&(sg_buffer_desc){
       .size = 262144 * 5 * sizeof(float),
       .usage.write_transient = true,
@@ -136,7 +136,7 @@ void ls_renderer_init(float clear_r, float clear_g, float clear_b) {
   };
 }
 
-void ls_frame_begin(void) { g_shape_vertex_count = 0; }
+void gfx_frame_begin(void) { g_shape_vertex_count = 0; }
 
 static void draw_polygon(const float points[][2], int count, uint32_t color) {
   const float dpi = sapp_dpi_scale();
@@ -165,8 +165,8 @@ static void draw_polygon(const float points[][2], int count, uint32_t color) {
   }
 }
 
-void ls_draw_rectangle(float x, float y, float width, float height,
-                       uint32_t color) {
+void gfx_draw_rectangle(float x, float y, float width, float height,
+                        uint32_t color) {
   const float points[4][2] = {
       {x, y},
       {x, y + height},
@@ -176,7 +176,7 @@ void ls_draw_rectangle(float x, float y, float width, float height,
   draw_polygon(points, 4, color);
 }
 
-void ls_draw_hexagon(float x, float y, float radius, uint32_t color) {
+void gfx_draw_hexagon(float x, float y, float radius, uint32_t color) {
   const float half_height = radius * 0.8660254037844386f;  // sqrt(3) / 2
   const float points[6][2] = {
       {x - radius, y},
@@ -189,8 +189,8 @@ void ls_draw_hexagon(float x, float y, float radius, uint32_t color) {
   draw_polygon(points, 6, color);
 }
 
-void ls_draw_label(int32_t index, float x, float y, uint32_t background,
-                   bool selected) {
+void gfx_draw_label(int32_t index, float x, float y, uint32_t background,
+                    bool selected) {
   if (index < 0 || index >= (int)(sizeof(LABELS) / sizeof(LABELS[0]))) return;
   const label_info label = LABELS[index];
   const uint32_t foreground = 0x232634;
@@ -204,13 +204,13 @@ void ls_draw_label(int32_t index, float x, float y, uint32_t background,
       const float fg = (foreground >> shift) & 255;
       color |= (uint32_t)(bg + (fg - bg) * alpha + 0.5f) << shift;
     }
-    ls_draw_rectangle(roundf(x - label.width * 0.5f) + span.x,
-                      roundf(y - label.height * 0.5f) + span.y, span.width,
-                      1.0f, color);
+    gfx_draw_rectangle(roundf(x - label.width * 0.5f) + span.x,
+                       roundf(y - label.height * 0.5f) + span.y, span.width,
+                       1.0f, color);
   }
 }
 
-void ls_draw_circle(float x, float y, float radius, uint32_t color) {
+void gfx_draw_circle(float x, float y, float radius, uint32_t color) {
   float points[64][2];
   for (int i = 0; i < 64; i++) {
     const float angle = -6.28318530718f * i / 64.0f;
@@ -220,7 +220,43 @@ void ls_draw_circle(float x, float y, float radius, uint32_t color) {
   draw_polygon(points, 64, color);
 }
 
-void ls_frame_end(void) {
+void gfx_draw_double_chevron_right(float x, float y, float dx, float dy,
+                                   uint32_t color) {
+  const float length = sqrtf(dx * dx + dy * dy);
+  if (length == 0.0f) {
+    return;
+  }
+  const float cosine = dx / length;
+  const float sine = dy / length;
+  for (int i = 0; i < 2; i++) {
+    const float left = -16.0f + i * 8.5f;
+    const float top = -16.0f;
+    float upper[4][2] = {
+        {left + 7.5146f, top + 6.1005f},
+        {left + 6.1006f, top + 7.5146f},
+        {left + 14.5859f, top + 15.9999f},
+        {left + 17.414f, top + 15.9999f},
+    };
+    float lower[4][2] = {
+        {left + 17.414f, top + 15.9999f},
+        {left + 14.5859f, top + 15.9999f},
+        {left + 6.1005f, top + 24.4853f},
+        {left + 7.5146f, top + 25.8994f},
+    };
+    for (int j = 0; j < 4; j++) {
+      const float ux = upper[j][0], uy = upper[j][1];
+      const float lx = lower[j][0], ly = lower[j][1];
+      upper[j][0] = x + ux * cosine - uy * sine;
+      upper[j][1] = y + ux * sine + uy * cosine;
+      lower[j][0] = x + lx * cosine - ly * sine;
+      lower[j][1] = y + lx * sine + ly * cosine;
+    }
+    draw_polygon(upper, 4, color);
+    draw_polygon(lower, 4, color);
+  }
+}
+
+void gfx_frame_end(void) {
   if (g_shape_vertex_count > 0) {
     sg_write_buffer_transient(&(sg_write_buffer_desc){
         .src.data = {.ptr = g_shape_vertices,

@@ -1,0 +1,1 @@
+clang-format -i --style=Google csrc/sokol.c && cargo fmt && cargo run
