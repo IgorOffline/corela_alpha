@@ -1,0 +1,77 @@
+[package]
+name = "corela_alpha_server"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+sockudo-ws = { version = "3.1.0", features = ["fastrand"], path = "../../rust_vendor/sockudo-ws/current/sockudo-ws-3.1.0" }
+futures-util = { version = "0.3.34", features = ["sink"] }
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "net"] }
+
+[patch.crates-io]
+# === === ===
+# sockudo-ws / tokio / futures-util
+# === === ===
+tokio_sockudo = { package = "tokio", path = "../../rust_vendor/sockudo-ws/current/tokio-1.54.1" }
+futures-util_futures = { package = "futures-util", path = "../../rust_vendor/futures-util/current/futures-util-0.3.34" }
+
+# (transitive crates)
+fastrand_sockudo = { package = "fastrand", path = "../../rust_vendor/sockudo-ws/current/fastrand-2.5.0" }
+futures-macro_futures = { package = "futures-macro", path = "../../rust_vendor/futures-util/current/futures-macro-0.3.34" }
+proc-macro2_sockudo = { package = "proc-macro2", path = "../../rust_vendor/sockudo-ws/current/proc-macro2-1.0.107" }
+quote_sockudo = { package = "quote", path = "../../rust_vendor/sockudo-ws/current/quote-1.0.47" }
+syn_sockudo = { package = "syn", path = "../../rust_vendor/sockudo-ws/current/syn-3.0.9" }
+unicode-ident_sockudo = { package = "unicode-ident", path = "../../rust_vendor/sockudo-ws/current/unicode-ident-1.0.27" }
+base64_sockudo = { package = "base64", path = "../../rust_vendor/sockudo-ws/current/base64-0.23.1" }
+bitflags_sockudo = { package = "bitflags", path = "../../rust_vendor/sockudo-ws/current/bitflags-2.13.2" }
+block-buffer_sockudo = { package = "block-buffer", path = "../../rust_vendor/sockudo-ws/current/block-buffer-0.12.1" }
+bumpalo_sockudo = { package = "bumpalo", path = "../../rust_vendor/sockudo-ws/current/bumpalo-3.20.3" }
+bytes_sockudo = { package = "bytes", path = "../../rust_vendor/sockudo-ws/current/bytes-1.12.1" }
+cfg-if_sockudo = { package = "cfg-if", path = "../../rust_vendor/sockudo-ws/current/cfg-if-1.0.5" }
+const-oid_sockudo = { package = "const-oid", path = "../../rust_vendor/sockudo-ws/current/const-oid-0.10.2" }
+cpufeatures_sockudo = { package = "cpufeatures", path = "../../rust_vendor/sockudo-ws/current/cpufeatures-0.3.1" }
+crypto-common_sockudo = { package = "crypto-common", path = "../../rust_vendor/sockudo-ws/current/crypto-common-0.2.2" }
+digest_sockudo = { package = "digest", path = "../../rust_vendor/sockudo-ws/current/digest-0.11.3" }
+flate2_sockudo = { package = "flate2", path = "../../rust_vendor/sockudo-ws/current/flate2-1.1.10" }
+futures-core_sockudo = { package = "futures-core", path = "../../rust_vendor/sockudo-ws/current/futures-core-0.3.34" }
+futures-sink_sockudo = { package = "futures-sink", path = "../../rust_vendor/sockudo-ws/current/futures-sink-0.3.34" }
+futures-task_sockudo = { package = "futures-task", path = "../../rust_vendor/sockudo-ws/current/futures-task-0.3.34" }
+http_sockudo = { package = "http", path = "../../rust_vendor/sockudo-ws/current/http-1.5.0" }
+httparse_sockudo = { package = "httparse", path = "../../rust_vendor/sockudo-ws/current/httparse-1.10.1" }
+hybrid-array_sockudo = { package = "hybrid-array", path = "../../rust_vendor/sockudo-ws/current/hybrid-array-0.4.15" }
+itoa_sockudo = { package = "itoa", path = "../../rust_vendor/sockudo-ws/current/itoa-1.0.18" }
+js-sys_sockudo = { package = "js-sys", path = "../../rust_vendor/sockudo-ws/current/js-sys-0.3.106" }
+libc_sockudo = { package = "libc", path = "../../rust_vendor/sockudo-ws/current/libc-0.2.191" }
+libz-rs-sys_sockudo = { package = "libz-rs-sys", path = "../../rust_vendor/sockudo-ws/current/libz-rs-sys-0.6.8" }
+lock_api_sockudo = { package = "lock_api", path = "../../rust_vendor/sockudo-ws/current/lock_api-0.4.14" }
+mio_sockudo = { package = "mio", path = "../../rust_vendor/sockudo-ws/current/mio-1.2.4" }
+once_cell_sockudo = { package = "once_cell", path = "../../rust_vendor/sockudo-ws/current/once_cell-1.21.4" }
+parking_lot_sockudo = { package = "parking_lot", path = "../../rust_vendor/sockudo-ws/current/parking_lot-0.12.5" }
+parking_lot_core_sockudo = { package = "parking_lot_core", path = "../../rust_vendor/sockudo-ws/current/parking_lot_core-0.9.12" }
+pin-project-lite_sockudo = { package = "pin-project-lite", path = "../../rust_vendor/sockudo-ws/current/pin-project-lite-0.2.17" }
+portable-atomic_sockudo = { package = "portable-atomic", path = "../../rust_vendor/sockudo-ws/current/portable-atomic-1.15.0" }
+quanta_sockudo = { package = "quanta", path = "../../rust_vendor/sockudo-ws/current/quanta-0.13.0" }
+raw-cpuid_sockudo = { package = "raw-cpuid", path = "../../rust_vendor/sockudo-ws/current/raw-cpuid-11.6.0" }
+redox_syscall_sockudo = { package = "redox_syscall", path = "../../rust_vendor/sockudo-ws/current/redox_syscall-0.5.18" }
+rustversion_sockudo = { package = "rustversion", path = "../../rust_vendor/sockudo-ws/current/rustversion-1.0.23" }
+scopeguard_sockudo = { package = "scopeguard", path = "../../rust_vendor/sockudo-ws/current/scopeguard-1.2.0" }
+sha1_sockudo = { package = "sha1", path = "../../rust_vendor/sockudo-ws/current/sha1-0.11.0" }
+simdutf8_sockudo = { package = "simdutf8", path = "../../rust_vendor/sockudo-ws/current/simdutf8-0.1.5" }
+slab_sockudo = { package = "slab", path = "../../rust_vendor/sockudo-ws/current/slab-0.4.12" }
+smallvec_sockudo = { package = "smallvec", path = "../../rust_vendor/sockudo-ws/current/smallvec-1.16.4" }
+socket2_sockudo = { package = "socket2", path = "../../rust_vendor/sockudo-ws/current/socket2-0.6.5" }
+tokio-macros_sockudo = { package = "tokio-macros", path = "../../rust_vendor/sockudo-ws/current/tokio-macros-2.7.2" }
+tokio-util_sockudo = { package = "tokio-util", path = "../../rust_vendor/sockudo-ws/current/tokio-util-0.7.20" }
+typenum_sockudo = { package = "typenum", path = "../../rust_vendor/sockudo-ws/current/typenum-1.20.1" }
+wasi_sockudo = { package = "wasi", path = "../../rust_vendor/sockudo-ws/current/wasi-0.11.1+wasi-snapshot-preview1" }
+wasip1_sockudo = { package = "wasip1", path = "../../rust_vendor/sockudo-ws/current/wasip1-1.0.0" }
+wasip2_sockudo = { package = "wasip2", path = "../../rust_vendor/sockudo-ws/current/wasip2-1.0.4+wasi-0.2.12" }
+wasm-bindgen_sockudo = { package = "wasm-bindgen", path = "../../rust_vendor/sockudo-ws/current/wasm-bindgen-0.2.129" }
+wasm-bindgen-macro_sockudo = { package = "wasm-bindgen-macro", path = "../../rust_vendor/sockudo-ws/current/wasm-bindgen-macro-0.2.129" }
+wasm-bindgen-macro-support_sockudo = { package = "wasm-bindgen-macro-support", path = "../../rust_vendor/sockudo-ws/current/wasm-bindgen-macro-support-0.2.129" }
+wasm-bindgen-shared_sockudo = { package = "wasm-bindgen-shared", path = "../../rust_vendor/sockudo-ws/current/wasm-bindgen-shared-0.2.129" }
+web-sys_sockudo = { package = "web-sys", path = "../../rust_vendor/sockudo-ws/current/web-sys-0.3.106" }
+windows-link_sockudo = { package = "windows-link", path = "../../rust_vendor/sockudo-ws/current/windows-link-0.2.1" }
+windows-sys_sockudo = { package = "windows-sys", path = "../../rust_vendor/sockudo-ws/current/windows-sys-0.61.2" }
+wit-bindgen_sockudo = { package = "wit-bindgen", path = "../../rust_vendor/sockudo-ws/current/wit-bindgen-0.57.1" }
+zlib-rs_sockudo = { package = "zlib-rs", path = "../../rust_vendor/sockudo-ws/current/zlib-rs-0.6.8" }
