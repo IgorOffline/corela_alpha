@@ -3,6 +3,8 @@
 
 extern crate alloc;
 
+mod net;
+
 use core::ffi::{c_char, c_int};
 use core::sync::atomic::{AtomicI32, Ordering};
 
@@ -110,6 +112,7 @@ struct Config {
     base: u32,
     tile: u32,
     selected: u32,
+    server: core::net::SocketAddrV4,
 }
 
 fn config() -> &'static Config {
@@ -146,6 +149,12 @@ fn config() -> &'static Config {
             .unwrap_or_else(|| unsafe { abort() });
         alloc::ffi::CString::new(v).unwrap_or_else(|_| unsafe { abort() })
     };
+    let server = table
+        .get("net")
+        .and_then(|t| t.get("server"))
+        .and_then(|v| v.as_str())
+        .and_then(|v| v.parse().ok())
+        .unwrap_or_else(|| unsafe { abort() });
     let cfg = alloc::boxed::Box::into_raw(alloc::boxed::Box::new(Config {
         name: meta("name"),
         version: meta("version"),
@@ -164,6 +173,7 @@ fn config() -> &'static Config {
         base: color("color_base"),
         tile: color("color_tile"),
         selected: color("color_selected"),
+        server,
     }));
     CONFIG.store(cfg, Ordering::Release);
     unsafe { &*cfg }
@@ -265,7 +275,9 @@ fn draw_hexagon(x: f32, y: f32, radius: f32, color: u32) {
     unsafe { gfx_draw_hexagon(x, y, radius, color) }
 }
 
-extern "C" fn cleanup() {}
+extern "C" fn cleanup() {
+    net::disconnect();
+}
 
 extern "C" fn key_down(key_code: i32) {
     let (dq, dr) = match key_code {
@@ -286,6 +298,7 @@ extern "C" fn key_down(key_code: i32) {
     if in_bounds(q, r) {
         SELECTED_Q.store(q, Ordering::Relaxed);
         SELECTED_R.store(r, Ordering::Relaxed);
+        net::send_text(&alloc::format!("select {q} {r}"));
     }
 }
 
@@ -293,6 +306,15 @@ extern "C" fn key_down(key_code: i32) {
 pub extern "C" fn main(_argc: c_int, _argv: *const *const c_char) -> c_int {
     let cfg = config();
     unsafe { printf(c"%s %s\n".as_ptr(), cfg.name.as_ptr(), cfg.version.as_ptr()) };
+    if net::open(cfg.server) {
+        net::send_text(&alloc::format!(
+            "hello {} {}",
+            cfg.name.to_str().unwrap_or_default(),
+            cfg.version.to_str().unwrap_or_default()
+        ));
+    } else {
+        unsafe { printf(c"net: server unreachable, running offline\n".as_ptr()) };
+    }
     let desc = Desc {
         title: c"corela".as_ptr(),
         width: window_width(),
