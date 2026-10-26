@@ -1,0 +1,8 @@
+[package]
+name = "corela_gfx"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[dependencies]
+corela_gfx_impl.workspace = true

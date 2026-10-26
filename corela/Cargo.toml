@@ -1,14 +1,19 @@
-[package]
-name = "corela_alpha_client"
+[workspace]
+resolver = "3"
+members = ["corela_core", "corela_gfx", "corela_gfx_impl"]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
-build = "build.rs"
+license-file = "../LICENSE"
 
-[dependencies]
-toml = { version = "1", default-features = false, features = ["parse", "serde"] }
-
-[build-dependencies]
+[workspace.dependencies]
+corela_gfx = { path = "corela_gfx" }
+corela_gfx_impl = { path = "corela_gfx_impl" }
+toml = { version = "1", default-features = false, features = ["std", "parse", "serde"] }
 cc = "1"
+env_logger = { version = "0.11", default-features = false }
+log = "0.4"
 
 [profile.dev]
 panic = "abort"
@@ -17,6 +22,13 @@ panic = "abort"
 panic = "abort"
 
 [patch.crates-io]
+# === === ===
+# env_logger
+# === === ===
+env_logger = { path = "../../rust_vendor/env_logger/current/env_logger-0.11.11" }
+env_filter = { path = "../../rust_vendor/env_logger/current/env_filter-2.0.0" }
+log = { path = "../../rust_vendor/env_logger/current/log-0.4.34" }
+
 # === === ===
 # sokol
 # === === ===
