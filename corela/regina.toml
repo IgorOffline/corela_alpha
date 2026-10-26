@@ -1,0 +1,31 @@
+[meta]
+name = "corela"
+version = "0.1.0"
+
+[bpmn]
+cell_x = -3
+cell_y = 3
+
+[color]
+mauve_name = "mauve"
+mauve_value = 0xca9ee6
+blue_name = "blue"
+blue_value = 0x8caaee
+surface_2_name = "surface_2"
+surface_2_value = 0x626880
+
+[gfx]
+hex_radius = 4
+hex_size = 32
+window_width = 1152
+window_height = 648
+color_base = "surface_2"
+color_tile = "blue"
+color_selected = "mauve"
+input_key_escape = 256
+input_key_q = 81
+input_key_w = 87
+input_key_e = 69
+input_key_a = 65
+input_key_s = 83
+input_key_d = 68
