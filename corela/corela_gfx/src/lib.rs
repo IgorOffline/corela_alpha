@@ -1,6 +1,7 @@
 #![no_std]
 
 extern crate alloc;
+extern crate corela_gfx_impl;
 
 use alloc::boxed::Box;
 use core::ffi::{CStr, c_char};

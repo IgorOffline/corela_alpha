@@ -1,0 +1,10 @@
+[package]
+name = "corela_gfx_impl"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+build = "build.rs"
+links = "corela_sokol"
+
+[build-dependencies]
+cc.workspace = true

@@ -1,1 +1,1 @@
-clang-format -i --style=Google corela_gfx/csrc/sokol.c && cargo fmt && cargo test && cargo run
+clang-format -i --style=Google corela_gfx_impl/csrc/sokol.c && cargo fmt && cargo test && cargo run
