@@ -1,32 +1,12 @@
+mod config;
 mod model;
 
 use std::path::{Path, PathBuf};
 
 use corela_gfx::{App, Frame, HexLayout, Window};
 
-use model::{Event, Flow, Gfx};
-
-const CHEVRON_OFFSETS: [(i32, i32); 6] = [(1, -1), (1, 0), (0, 1), (-1, 1), (-1, 0), (0, -1)];
-
-struct Config {
-    name: String,
-    version: String,
-    cell: (i32, i32),
-    key_escape: i32,
-    key_q: i32,
-    key_w: i32,
-    key_e: i32,
-    key_a: i32,
-    key_s: i32,
-    key_d: i32,
-    window_width: i32,
-    window_height: i32,
-    radius: i32,
-    size: f32,
-    base: u32,
-    tile: u32,
-    selected: u32,
-}
+use crate::config::load_config;
+use model::{Config, Event, Flow, Gfx};
 
 const NAME: &str = env!("CARGO_BIN_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -64,49 +44,6 @@ fn find_regina() -> PathBuf {
     })
 }
 
-fn load_config(path: &Path) -> Config {
-    let text = std::fs::read_to_string(path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
-    let table: toml::Table = text
-        .parse()
-        .unwrap_or_else(|e| panic!("{}: {e}", path.display()));
-    let value = |section: &str, key: &str| {
-        table
-            .get(section)
-            .and_then(|t| t.get(key))
-            .unwrap_or_else(|| panic!("{}: missing [{section}] {key}", path.display()))
-    };
-    let int = |section: &str, key: &str| {
-        value(section, key)
-            .as_integer()
-            .unwrap_or_else(|| panic!("{}: [{section}] {key} must be an integer", path.display()))
-    };
-    let str = |section: &str, key: &str| {
-        value(section, key)
-            .as_str()
-            .unwrap_or_else(|| panic!("{}: [{section}] {key} must be a string", path.display()))
-    };
-    let color = |role: &str| int("color", &format!("{}_value", str("gfx", role))) as u32;
-    Config {
-        name: str("meta", "name").to_owned(),
-        version: str("meta", "version").to_owned(),
-        cell: (int("bpmn", "cell_x") as i32, int("bpmn", "cell_y") as i32),
-        key_escape: int("gfx", "input_key_escape") as i32,
-        key_q: int("gfx", "input_key_q") as i32,
-        key_w: int("gfx", "input_key_w") as i32,
-        key_e: int("gfx", "input_key_e") as i32,
-        key_a: int("gfx", "input_key_a") as i32,
-        key_s: int("gfx", "input_key_s") as i32,
-        key_d: int("gfx", "input_key_d") as i32,
-        window_width: int("gfx", "window_width") as i32,
-        window_height: int("gfx", "window_height") as i32,
-        radius: int("gfx", "hex_radius") as i32,
-        size: int("gfx", "hex_size") as f32,
-        base: color("color_base"),
-        tile: color("color_tile"),
-        selected: color("color_selected"),
-    }
-}
-
 struct Corela {
     config: Config,
     gfx: Gfx,
@@ -124,7 +61,8 @@ impl App for Corela {
             let color = if active { config.selected } else { config.tile };
             frame.hexagon(at, self.layout.size - 2.0, color);
             let occupied = (q, r) == config.cell
-                || CHEVRON_OFFSETS
+                || config
+                    .chevron_offsets
                     .iter()
                     .any(|&(dq, dr)| (q, r) == (cell_q + dq, cell_r + dr));
             if !occupied {
@@ -133,11 +71,23 @@ impl App for Corela {
         }
 
         let center = self.layout.to_pixel(cell_q, cell_r);
-        frame.circle(center, 15.75, 0x232634);
-        frame.circle(center, 14.25, 0xffffff);
-        for (dq, dr) in CHEVRON_OFFSETS {
+        frame.circle(
+            center,
+            config.cell_marker_outer_radius,
+            config.cell_marker_border_color,
+        );
+        frame.circle(
+            center,
+            config.cell_marker_inner_radius,
+            config.cell_marker_fill_color,
+        );
+        for &(dq, dr) in &config.chevron_offsets {
             let at = self.layout.to_pixel(cell_q + dq, cell_r + dr);
-            frame.double_chevron_right(at, (at.0 - center.0, at.1 - center.1), 0xef9f76);
+            frame.double_chevron_right(
+                at,
+                (at.0 - center.0, at.1 - center.1),
+                config.chevron_color,
+            );
         }
     }
 
