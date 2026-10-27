@@ -106,13 +106,15 @@ static const char* const FS_SRC =
 
 static sg_pipeline g_pip;
 static sg_buffer g_shape_buffer;
-static float g_shape_vertices[262144][5];
+// 256 * 1024 vertices: x y r g b
+enum { MAX_SHAPE_VERTICES = 256 * 1024 };
+static float g_shape_vertices[MAX_SHAPE_VERTICES][5];
 static int g_shape_vertex_count;
 static sg_pass_action g_pass_action;
 
 void gfx_renderer_init(float clear_r, float clear_g, float clear_b) {
   g_shape_buffer = sg_make_buffer(&(sg_buffer_desc){
-      .size = 262144 * 5 * sizeof(float),
+      .size = sizeof(g_shape_vertices),
       .usage.write_transient = true,
       .label = "shape-vertices",
   });
@@ -144,7 +146,7 @@ static void draw_polygon(const float points[][2], int count, uint32_t color) {
   const float window_height = (float)sapp_height() / dpi;
   if (window_width <= 0 || window_height <= 0) return;
   const int vertex_count = (count - 2) * 3;
-  if (g_shape_vertex_count + vertex_count > 262144) {
+  if (g_shape_vertex_count + vertex_count > MAX_SHAPE_VERTICES) {
     SOKOL_ASSERT(false && "shape vertex capacity exceeded");
     return;
   }
