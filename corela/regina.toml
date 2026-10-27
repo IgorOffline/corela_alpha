@@ -8,13 +8,22 @@ cell_y = 3
 
 [color]
 mauve_name = "mauve"
-mauve_value = 0xca9ee6
+mauve_value = 0xcba6f7
 blue_name = "blue"
-blue_value = 0x8caaee
+blue_value = 0x89b4fa
 surface_2_name = "surface_2"
-surface_2_value = 0x626880
+surface_2_value = 0x585b70
+crust_name = "crust"
+crust_value = 0x11111b
+text_name = "text"
+text_value = 0xcdd6f4
+peach_name = "peach"
+peach_value = 0xfab387
 
 [gfx]
+chevron_offsets = [[1, -1], [1, 0], [0, 1], [-1, 1], [-1, 0], [0, -1]]
+cell_marker_outer_radius = 15.75
+cell_marker_inner_radius = 14.25
 hex_radius = 4
 hex_size = 32
 window_width = 1152
@@ -22,6 +31,9 @@ window_height = 648
 color_base = "surface_2"
 color_tile = "blue"
 color_selected = "mauve"
+color_chevron = "peach"
+color_cell_marker_border = "crust"
+color_cell_marker_fill = "text"
 input_key_escape = 256
 input_key_q = 81
 input_key_w = 87

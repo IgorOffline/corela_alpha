@@ -56,3 +56,29 @@ impl Gfx {
         }
     }
 }
+
+pub struct Config {
+    pub name: String,
+    pub version: String,
+    pub cell: (i32, i32),
+    pub key_escape: i32,
+    pub key_q: i32,
+    pub key_w: i32,
+    pub key_e: i32,
+    pub key_a: i32,
+    pub key_s: i32,
+    pub key_d: i32,
+    pub window_width: i32,
+    pub window_height: i32,
+    pub radius: i32,
+    pub size: f32,
+    pub base: u32,
+    pub tile: u32,
+    pub selected: u32,
+    pub chevron_offsets: Vec<(i32, i32)>,
+    pub cell_marker_outer_radius: f32,
+    pub cell_marker_inner_radius: f32,
+    pub cell_marker_border_color: u32,
+    pub cell_marker_fill_color: u32,
+    pub chevron_color: u32,
+}
