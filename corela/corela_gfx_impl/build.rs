@@ -1,9 +1,10 @@
 fn main() {
     println!("cargo:rerun-if-changed=csrc");
+    println!("cargo:rerun-if-changed=sokol");
 
     cc::Build::new()
         .file("csrc/sokol.c")
-        .include("csrc")
+        .include("sokol")
         .define("SOKOL_GLCORE", None)
         .warnings(true)
         .compile("corela_sokol");
