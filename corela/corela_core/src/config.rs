@@ -36,37 +36,26 @@ pub fn load_config(path: &Path) -> Config {
         );
         radius as f32
     };
-    let chevron_offsets = value("gfx", "chevron_offsets")
-        .as_array()
-        .unwrap_or_else(|| {
+    let chevron_coordinate = |axis: &str, index: usize| {
+        let key = format!("chevron_offsets_{axis}_{index}");
+        let coordinate = value("gfx", &key)
+            .as_array()
+            .filter(|items| items.len() == 1)
+            .and_then(|items| items[0].as_integer())
+            .and_then(|n| i32::try_from(n).ok());
+        coordinate.unwrap_or_else(|| {
             panic!(
-                "{}: [gfx] chevron_offsets must be an array of [q, r] pairs",
+                "{}: [gfx] {key} must be an array containing one 32-bit integer",
                 path.display()
             )
         })
-        .iter()
-        .map(|offset| {
-            let pair = offset
-                .as_array()
-                .filter(|pair| pair.len() == 2)
-                .unwrap_or_else(|| {
-                    panic!(
-                        "{}: each chevron offset must be a [q, r] pair",
-                        path.display()
-                    )
-                });
-            let coordinate = |index: usize| {
-                pair[index]
-                    .as_integer()
-                    .and_then(|n| i32::try_from(n).ok())
-                    .unwrap_or_else(|| {
-                        panic!(
-                            "{}: chevron coordinates must be 32-bit integers",
-                            path.display()
-                        )
-                    })
-            };
-            (coordinate(0), coordinate(1))
+    };
+    let chevron_offsets = (0..6)
+        .map(|index| {
+            (
+                chevron_coordinate("q", index),
+                chevron_coordinate("r", index),
+            )
         })
         .collect();
     let cell_marker_outer_radius = radius("cell_marker_outer_radius");
