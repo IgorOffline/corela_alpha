@@ -25,32 +25,32 @@ panic = "abort"
 # === === ===
 # env_logger
 # === === ===
-env_logger = { path = "../../rust_vendor/env_logger/current/env_logger-0.11.11" }
-env_filter = { path = "../../rust_vendor/env_logger/current/env_filter-2.0.0" }
-log = { path = "../../rust_vendor/env_logger/current/log-0.4.34" }
+env_logger = { path = "../../../rust_vendor/env_logger/current/env_logger-0.11.11" }
+env_filter = { path = "../../../rust_vendor/env_logger/current/env_filter-2.0.0" }
+log = { path = "../../../rust_vendor/env_logger/current/log-0.4.34" }
 
 # === === ===
 # sokol
 # === === ===
-cc = { path = "../../rust_vendor/cc/current" }
-shlex = { path = "../../rust_vendor/shlex/current" }
-find-msvc-tools = { path = "../../rust_vendor/find-msvc-tools/current" }
+cc = { path = "../../../rust_vendor/cc/current" }
+shlex = { path = "../../../rust_vendor/shlex/current" }
+find-msvc-tools = { path = "../../../rust_vendor/find-msvc-tools/current" }
 
 # === === ===
 # toml
 # === === ===
-toml_toml = { package = "toml", path = "../../rust_vendor/toml/current/toml-1.1.6+spec-1.1.0" }
-toml_datetime_toml = { package = "toml_datetime", path = "../../rust_vendor/toml/current/toml_datetime-1.1.1+spec-1.1.0" }
-toml_parser_toml = { package = "toml_parser", path = "../../rust_vendor/toml/current/toml_parser-1.1.3+spec-1.1.0" }
-toml_writer_toml = { package = "toml_writer", path = "../../rust_vendor/toml/current/toml_writer-1.1.2+spec-1.1.0" }
-serde_spanned_toml = { package = "serde_spanned", path = "../../rust_vendor/toml/current/serde_spanned-1.1.1" }
-serde_core_toml = { package = "serde_core", path = "../../rust_vendor/toml/current/serde_core-1.0.229" }
-winnow_toml = { package = "winnow", path = "../../rust_vendor/toml/current/winnow-1.0.4" }
-equivalent_toml = { package = "equivalent", path = "../../rust_vendor/toml/current/equivalent-1.0.2" }
-hashbrown_toml = { package = "hashbrown", path = "../../rust_vendor/toml/current/hashbrown-0.17.1" }
-indexmap_toml = { package = "indexmap", path = "../../rust_vendor/toml/current/indexmap-2.14.2" }
-proc-macro2_toml = { package = "proc-macro2", path = "../../rust_vendor/toml/current/proc-macro2-1.0.107" }
-quote_toml = { package = "quote", path = "../../rust_vendor/toml/current/quote-1.0.47" }
-serde_derive_toml = { package = "serde_derive", path = "../../rust_vendor/toml/current/serde_derive-1.0.229" }
-syn_toml = { package = "syn", path = "../../rust_vendor/toml/current/syn-3.0.5" }
-unicode-ident_toml = { package = "unicode-ident", path = "../../rust_vendor/toml/current/unicode-ident-1.0.24" }
+toml_toml = { package = "toml", path = "../../../rust_vendor/toml/current/toml-1.1.6+spec-1.1.0" }
+toml_datetime_toml = { package = "toml_datetime", path = "../../../rust_vendor/toml/current/toml_datetime-1.1.1+spec-1.1.0" }
+toml_parser_toml = { package = "toml_parser", path = "../../../rust_vendor/toml/current/toml_parser-1.1.3+spec-1.1.0" }
+toml_writer_toml = { package = "toml_writer", path = "../../../rust_vendor/toml/current/toml_writer-1.1.2+spec-1.1.0" }
+serde_spanned_toml = { package = "serde_spanned", path = "../../../rust_vendor/toml/current/serde_spanned-1.1.1" }
+serde_core_toml = { package = "serde_core", path = "../../../rust_vendor/toml/current/serde_core-1.0.229" }
+winnow_toml = { package = "winnow", path = "../../../rust_vendor/toml/current/winnow-1.0.4" }
+equivalent_toml = { package = "equivalent", path = "../../../rust_vendor/toml/current/equivalent-1.0.2" }
+hashbrown_toml = { package = "hashbrown", path = "../../../rust_vendor/toml/current/hashbrown-0.17.1" }
+indexmap_toml = { package = "indexmap", path = "../../../rust_vendor/toml/current/indexmap-2.14.2" }
+proc-macro2_toml = { package = "proc-macro2", path = "../../../rust_vendor/toml/current/proc-macro2-1.0.107" }
+quote_toml = { package = "quote", path = "../../../rust_vendor/toml/current/quote-1.0.47" }
+serde_derive_toml = { package = "serde_derive", path = "../../../rust_vendor/toml/current/serde_derive-1.0.229" }
+syn_toml = { package = "syn", path = "../../../rust_vendor/toml/current/syn-3.0.5" }
+unicode-ident_toml = { package = "unicode-ident", path = "../../../rust_vendor/toml/current/unicode-ident-1.0.24" }

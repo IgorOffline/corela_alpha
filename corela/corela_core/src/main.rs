@@ -114,6 +114,11 @@ impl App for Corela {
     fn frame(&mut self, frame: &mut Frame) {
         let config = &self.config;
         let theme = self.theme();
+        let inverted_theme = if self.dark {
+            &config.light_theme
+        } else {
+            &config.dark_theme
+        };
         frame.clear(theme.base_color);
         let (cell_q, cell_r) = config.cell;
         let selected = self.gfx.selected();
@@ -132,7 +137,12 @@ impl App for Corela {
             frame.hexagon(at, radius, color);
             // the marker and its chevrons cover these cells' labels
             if !self.is_marker_or_neighbor((q, r)) {
-                frame.label(label, at, color, theme.label_text_color, active);
+                let text_color = if active {
+                    inverted_theme.label_text_color
+                } else {
+                    theme.label_text_color
+                };
+                frame.label(label, at, color, text_color, active);
             }
         }
 
@@ -148,13 +158,19 @@ impl App for Corela {
             theme.cell_marker_fill_color,
         );
         for (dq, dr) in HEX_NEIGHBOR_OFFSETS {
-            let at = self.layout.to_pixel(cell_q + dq, cell_r + dr);
+            let cell = (cell_q + dq, cell_r + dr);
+            let at = self.layout.to_pixel(cell.0, cell.1);
+            let color = if cell == selected {
+                inverted_theme.chevron_color
+            } else {
+                theme.chevron_color
+            };
             frame.icon(
                 &config.chevron_icon,
                 at,
                 (at.0 - center.0, at.1 - center.1),
                 self.geometry.chevron_size,
-                theme.chevron_color,
+                color,
             );
         }
     }
