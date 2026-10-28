@@ -69,6 +69,16 @@ impl Gfx {
     }
 }
 
+pub struct Theme {
+    pub base_color: u32,
+    pub tile_color: u32,
+    pub selected_color: u32,
+    pub cell_marker_border_color: u32,
+    pub cell_marker_fill_color: u32,
+    pub chevron_color: u32,
+    pub label_text_color: u32,
+}
+
 pub struct Config {
     pub name: String,
     pub version: String,
@@ -82,11 +92,8 @@ pub struct Config {
     pub key_south_east: i32,
     pub window_width: i32,
     pub window_height: i32,
-    pub base_color: u32,
-    pub tile_color: u32,
-    pub selected_color: u32,
-    pub cell_marker_border_color: u32,
-    pub cell_marker_fill_color: u32,
-    pub chevron_color: u32,
+    pub key_theme: i32,
+    pub dark_theme: Theme,
+    pub light_theme: Theme,
     pub chevron_icon: Icon,
 }

@@ -1,4 +1,4 @@
-use crate::model::Config;
+use crate::model::{Config, Theme};
 use corela_gfx::Icon;
 use std::path::{Path, PathBuf};
 
@@ -7,14 +7,17 @@ pub const CONFIG_FILE_NAME: &str = "regina.toml";
 pub const SECTION_META: &str = "meta";
 const SECTION_BPMN: &str = "bpmn";
 const SECTION_ASSET: &str = "asset";
-const SECTION_COLOR: &str = "color";
 const SECTION_GFX: &str = "gfx";
 const SECTION_INPUT: &str = "input";
+const SECTION_THEME_DARK: &str = "theme_dark";
+const SECTION_THEME_LIGHT: &str = "theme_light";
+const THEME_COLOR_SUFFIX: &str = "_color";
+const THEME_ROLE_SUFFIX: &str = "_role";
 
 pub const KEY_NAME: &str = "name";
 pub const KEY_VERSION: &str = "version";
 
-/// `[gfx] color_tile = "blue"` resolves to `[color] blue_value`.
+/// `[theme_dark_role] color_tile = "blue"` resolves to `[theme_dark_color] blue_value`.
 const COLOR_VALUE_SUFFIX: &str = "_value";
 
 /// Reads typed values from a parsed config file. Anything missing or of the
@@ -71,11 +74,23 @@ impl ConfigReader {
         }
     }
 
-    /// Looks up the palette color named by `[gfx] role`.
-    fn color(&self, role: &str) -> u32 {
-        let name = self.string(SECTION_GFX, role);
+    /// Looks up the palette color named by `[<theme>_role] role`.
+    fn color(&self, theme: &str, role: &str) -> u32 {
+        let name = self.string(&format!("{theme}{THEME_ROLE_SUFFIX}"), role);
         let key = format!("{name}{COLOR_VALUE_SUFFIX}");
-        self.int(SECTION_COLOR, &key) as u32
+        self.int(&format!("{theme}{THEME_COLOR_SUFFIX}"), &key) as u32
+    }
+
+    fn theme(&self, theme: &str) -> Theme {
+        Theme {
+            base_color: self.color(theme, "color_base"),
+            tile_color: self.color(theme, "color_tile"),
+            selected_color: self.color(theme, "color_selected"),
+            cell_marker_border_color: self.color(theme, "color_cell_marker_border"),
+            cell_marker_fill_color: self.color(theme, "color_cell_marker_fill"),
+            chevron_color: self.color(theme, "color_chevron"),
+            label_text_color: self.color(theme, "color_label_text"),
+        }
     }
 
     /// Loads the SVG named by `[asset] key`, relative to the config file.
@@ -114,12 +129,9 @@ pub fn load_config(path: &Path) -> Config {
         key_south_east: reader.int(SECTION_INPUT, "input_key_south_east") as i32,
         window_width: reader.int(SECTION_GFX, "window_width") as i32,
         window_height: reader.int(SECTION_GFX, "window_height") as i32,
-        base_color: reader.color("color_base"),
-        tile_color: reader.color("color_tile"),
-        selected_color: reader.color("color_selected"),
-        cell_marker_border_color: reader.color("color_cell_marker_border"),
-        cell_marker_fill_color: reader.color("color_cell_marker_fill"),
-        chevron_color: reader.color("color_chevron"),
+        key_theme: reader.int(SECTION_INPUT, "input_key_theme") as i32,
+        dark_theme: reader.theme(SECTION_THEME_DARK),
+        light_theme: reader.theme(SECTION_THEME_LIGHT),
         chevron_icon: reader.icon("icon_chevron"),
     }
 }

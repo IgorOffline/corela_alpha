@@ -31,8 +31,7 @@ enum { CIRCLE_SEGMENT_COUNT = 64 };
 enum { VERTICES_PER_TRIANGLE = 3 };
 
 // label glyphs are pre-rendered as one-pixel-tall spans of anti-aliased
-// coverage, blended between the tile color and LABEL_TEXT_COLOR
-#define LABEL_TEXT_COLOR 0x232634
+// coverage, blended between the tile color and the label text color
 #define LABEL_SELECTED_OPACITY 1.0f
 #define LABEL_UNSELECTED_OPACITY 0.16f
 #define LABEL_SPAN_HEIGHT 1.0f
@@ -173,8 +172,13 @@ void gfx_draw_hexagon(float x, float y, float radius, uint32_t color) {
   draw_polygon(points, HEX_CORNER_COUNT, color);
 }
 
+void gfx_set_clear(float clear_r, float clear_g, float clear_b) {
+  g_pass_action.colors[0].clear_value =
+      (sg_color){clear_r, clear_g, clear_b, OPAQUE_ALPHA};
+}
+
 void gfx_draw_label(int32_t index, float x, float y, uint32_t background,
-                    bool selected) {
+                    uint32_t text, bool selected) {
   if (index < 0 || index >= (int)ARRAY_COUNT(LABELS)) return;
   const label_info label = LABELS[index];
   const float opacity =
@@ -186,7 +190,7 @@ void gfx_draw_label(int32_t index, float x, float y, uint32_t background,
     for (int shift = COLOR_BLUE_SHIFT; shift <= COLOR_RED_SHIFT;
          shift += COLOR_CHANNEL_BITS) {
       const float bg = color_channel(background, shift);
-      const float fg = color_channel(LABEL_TEXT_COLOR, shift);
+      const float fg = color_channel(text, shift);
       color |= (uint32_t)roundf(bg + (fg - bg) * alpha) << shift;
     }
     gfx_draw_rectangle(roundf(x - label.width * 0.5f) + span.x,

@@ -45,8 +45,9 @@ void gfx_frame_end(void);
 void gfx_draw_rectangle(float x, float y, float width, float height,
                         uint32_t color);
 void gfx_draw_hexagon(float x, float y, float radius, uint32_t color);
+void gfx_set_clear(float clear_r, float clear_g, float clear_b);
 void gfx_draw_label(int32_t index, float x, float y, uint32_t background,
-                    bool selected);
+                    uint32_t text, bool selected);
 void gfx_draw_circle(float x, float y, float radius, uint32_t color);
 void gfx_draw_icon(const gfx_icon* icon, float x, float y, float dx, float dy,
                    float size, uint32_t color);

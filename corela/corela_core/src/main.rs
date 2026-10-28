@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use corela_gfx::{App, Frame, HexLayout, Window};
 
 use crate::config::{CONFIG_FILE_NAME, KEY_NAME, KEY_VERSION, SECTION_META, load_config};
-use model::{Config, Event, Flow, Gfx};
+use model::{Config, Event, Flow, Gfx, Theme};
 
 const NAME: &str = env!("CARGO_BIN_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -83,9 +83,18 @@ struct Corela {
     gfx: Gfx,
     layout: HexLayout,
     geometry: corela_gfx::Geometry,
+    dark: bool,
 }
 
 impl Corela {
+    fn theme(&self) -> &Theme {
+        if self.dark {
+            &self.config.dark_theme
+        } else {
+            &self.config.light_theme
+        }
+    }
+
     /// Whether `cell` is the marker cell or one of its six neighbors.
     fn is_marker_or_neighbor(&self, cell: (i32, i32)) -> bool {
         let (marker_q, marker_r) = self.config.cell;
@@ -104,6 +113,8 @@ impl Corela {
 impl App for Corela {
     fn frame(&mut self, frame: &mut Frame) {
         let config = &self.config;
+        let theme = self.theme();
+        frame.clear(theme.base_color);
         let (cell_q, cell_r) = config.cell;
         let selected = self.gfx.selected();
         let cells = self.gfx.cells();
@@ -113,15 +124,15 @@ impl App for Corela {
             let at = self.layout.to_pixel(q, r);
             let active = (q, r) == selected;
             let color = if active {
-                config.selected_color
+                theme.selected_color
             } else {
-                config.tile_color
+                theme.tile_color
             };
             let radius = self.layout.size - self.geometry.hex_tile_inset;
             frame.hexagon(at, radius, color);
             // the marker and its chevrons cover these cells' labels
             if !self.is_marker_or_neighbor((q, r)) {
-                frame.label(label, at, color, active);
+                frame.label(label, at, color, theme.label_text_color, active);
             }
         }
 
@@ -129,12 +140,12 @@ impl App for Corela {
         frame.circle(
             center,
             self.geometry.cell_marker_outer_radius,
-            config.cell_marker_border_color,
+            theme.cell_marker_border_color,
         );
         frame.circle(
             center,
             self.geometry.cell_marker_inner_radius,
-            config.cell_marker_fill_color,
+            theme.cell_marker_fill_color,
         );
         for (dq, dr) in HEX_NEIGHBOR_OFFSETS {
             let at = self.layout.to_pixel(cell_q + dq, cell_r + dr);
@@ -143,13 +154,18 @@ impl App for Corela {
                 at,
                 (at.0 - center.0, at.1 - center.1),
                 self.geometry.chevron_size,
-                config.chevron_color,
+                theme.chevron_color,
             );
         }
     }
 
     fn key_down(&mut self, key_code: i32) {
         let config = &self.config;
+        if key_code == config.key_theme {
+            self.dark = !self.dark;
+            log::info!("core: {} theme", if self.dark { "dark" } else { "light" });
+            return;
+        }
         let event = if key_code == config.key_north {
             move_event(NORTH)
         } else if key_code == config.key_south {
@@ -186,7 +202,7 @@ fn main() {
         title: WINDOW_TITLE,
         width: config.window_width,
         height: config.window_height,
-        clear: config.base_color,
+        clear: config.dark_theme.base_color,
     };
     let geometry = corela_gfx::geometry();
     let layout = HexLayout {
@@ -202,6 +218,7 @@ fn main() {
         gfx,
         layout,
         geometry,
+        dark: true,
     };
     corela_gfx::run(&window, Box::new(app));
 }
