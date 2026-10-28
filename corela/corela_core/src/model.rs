@@ -1,3 +1,5 @@
+use corela_gfx::Icon;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Event {
     Move { dq: i32, dr: i32 },
@@ -10,6 +12,9 @@ pub enum Flow {
     Quit,
 }
 
+/// The board's middle cell in axial coordinates.
+const CENTER_CELL: (i32, i32) = (0, 0);
+
 pub struct Gfx {
     radius: i32,
     selected: (i32, i32),
@@ -19,7 +24,7 @@ impl Gfx {
     pub fn new(radius: i32) -> Self {
         Self {
             radius,
-            selected: (0, 0),
+            selected: CENTER_CELL,
         }
     }
 
@@ -27,16 +32,23 @@ impl Gfx {
         self.selected
     }
 
-    pub fn in_bounds(&self, (q, r): (i32, i32)) -> bool {
+    /// Whether the cell is at most `radius` steps from the center.
+    pub fn in_bounds(&self, cell: (i32, i32)) -> bool {
+        let (q, r) = cell;
         q.abs().max(r.abs()).max((q + r).abs()) <= self.radius
     }
 
     /// Every cell of the board, `q`-major.
-    pub fn cells(&self) -> impl Iterator<Item = (i32, i32)> + use<'_> {
-        let radius = self.radius;
-        (-radius..=radius)
-            .flat_map(move |q| (-radius..=radius).map(move |r| (q, r)))
-            .filter(|&cell| self.in_bounds(cell))
+    pub fn cells(&self) -> Vec<(i32, i32)> {
+        let mut cells = Vec::new();
+        for q in -self.radius..=self.radius {
+            for r in -self.radius..=self.radius {
+                if self.in_bounds((q, r)) {
+                    cells.push((q, r));
+                }
+            }
+        }
+        cells
     }
 
     pub fn handle(&mut self, event: Event) -> Flow {
@@ -70,15 +82,11 @@ pub struct Config {
     pub key_d: i32,
     pub window_width: i32,
     pub window_height: i32,
-    pub radius: i32,
-    pub size: f32,
-    pub base: u32,
-    pub tile: u32,
-    pub selected: u32,
-    pub chevron_offsets: Vec<(i32, i32)>,
-    pub cell_marker_outer_radius: f32,
-    pub cell_marker_inner_radius: f32,
+    pub base_color: u32,
+    pub tile_color: u32,
+    pub selected_color: u32,
     pub cell_marker_border_color: u32,
     pub cell_marker_fill_color: u32,
     pub chevron_color: u32,
+    pub chevron_icon: Icon,
 }

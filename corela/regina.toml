@@ -6,6 +6,9 @@ version = "0.1.0"
 cell_x = -3
 cell_y = 3
 
+[asset]
+icon_chevron = "corela_gfx_impl/asset/remixicon/remix-icon-arrow-right-double-line.svg"
+
 [color]
 mauve_name = "mauve"
 mauve_value = 0xcba6f7
@@ -25,22 +28,6 @@ peach_name = "peach"
 peach_value = 0xfab387
 
 [gfx]
-chevron_offsets_q_0 = [1]
-chevron_offsets_r_0 = [-1]
-chevron_offsets_q_1 = [1]
-chevron_offsets_r_1 = [0]
-chevron_offsets_q_2 = [0]
-chevron_offsets_r_2 = [1]
-chevron_offsets_q_3 = [-1]
-chevron_offsets_r_3 = [1]
-chevron_offsets_q_4 = [-1]
-chevron_offsets_r_4 = [0]
-chevron_offsets_q_5 = [0]
-chevron_offsets_r_5 = [-1]
-cell_marker_outer_radius = 15.75
-cell_marker_inner_radius = 14.25
-hex_radius = 4
-hex_size = 32
 window_width = 1152
 window_height = 648
 color_base = "surface_2"
@@ -49,10 +36,13 @@ color_selected = "mauve"
 color_chevron = "overlay_1"
 color_cell_marker_border = "crust"
 color_cell_marker_fill = "text"
-input_key_escape = 256
-input_key_q = 81
-input_key_w = 87
-input_key_e = 69
-input_key_a = 65
-input_key_s = 83
-input_key_d = 68
+
+# sokol_app `sapp_keycode` values (letters are their uppercase ASCII codes)
+[input]
+input_key_escape = 256 # SAPP_KEYCODE_ESCAPE
+input_key_q = 81 # SAPP_KEYCODE_Q
+input_key_w = 87 # SAPP_KEYCODE_W
+input_key_e = 69 # SAPP_KEYCODE_E
+input_key_a = 65 # SAPP_KEYCODE_A
+input_key_s = 83 # SAPP_KEYCODE_S
+input_key_d = 68 # SAPP_KEYCODE_D
