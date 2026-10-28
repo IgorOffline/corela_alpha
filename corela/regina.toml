@@ -37,12 +37,11 @@ color_chevron = "overlay_1"
 color_cell_marker_border = "crust"
 color_cell_marker_fill = "text"
 
-# sokol_app `sapp_keycode` values (letters are their uppercase ASCII codes)
 [input]
-input_key_escape = 256 # SAPP_KEYCODE_ESCAPE
-input_key_q = 81 # SAPP_KEYCODE_Q
-input_key_w = 87 # SAPP_KEYCODE_W
-input_key_e = 69 # SAPP_KEYCODE_E
-input_key_a = 65 # SAPP_KEYCODE_A
-input_key_s = 83 # SAPP_KEYCODE_S
-input_key_d = 68 # SAPP_KEYCODE_D
+input_key_escape = 256 # ESCAPE
+input_key_north_west = 81 # Q
+input_key_north = 87 # W
+input_key_north_east = 69 # E
+input_key_south_west = 65 # A
+input_key_south = 83 # S
+input_key_south_east = 68 # D
