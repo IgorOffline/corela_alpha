@@ -9,33 +9,63 @@ cell_y = 3
 [asset]
 icon_chevron = "corela_gfx_impl/asset/remixicon/remix-icon-arrow-right-double-line.svg"
 
-[color]
-mauve_name = "mauve"
-mauve_value = 0xcba6f7
-blue_name = "blue"
-blue_value = 0x89b4fa
-subtext_0_name = "subtext_0"
-subtext_0_value = 0xa6adc8
-overlay_1_name = "overlay_1"
-overlay_1_value = 0x7f849c
-surface_2_name = "surface_2"
-surface_2_value = 0x585b70
-crust_name = "crust"
-crust_value = 0x11111b
-text_name = "text"
-text_value = 0xcdd6f4
-peach_name = "peach"
-peach_value = 0xfab387
-
 [gfx]
 window_width = 1152
 window_height = 648
-color_base = "surface_2"
-color_tile = "blue"
-color_selected = "mauve"
-color_chevron = "overlay_1"
-color_cell_marker_border = "crust"
+
+[theme_dark_color]
+base_name = "base"
+base_value = 0x24273A
+surface_0_name = "surface_0"
+surface_0_value = 0x363A4F
+text_name = "text"
+text_value = 0xCAD3F5
+shadow_name = "shadow"
+shadow_value = 0x181A2B
+yellow_name = "yellow"
+yellow_value = 0xEED49F
+peach_name = "peach"
+peach_value = 0xF5A97F
+maroon_name = "maroon"
+maroon_value = 0xEE99A0
+red_name = "red"
+red_value = 0xED8796
+
+[theme_dark_role]
+color_base = "base"
+color_tile = "surface_0"
+color_selected = "peach"
+color_chevron = "maroon"
+color_cell_marker_border = "red"
 color_cell_marker_fill = "text"
+color_label_text = "text"
+
+[theme_light_color]
+base_name = "base"
+base_value = 0xEFF1F5
+surface_0_name = "surface_0"
+surface_0_value = 0xDCE0E8
+text_name = "text"
+text_value = 0x4C4F69
+shadow_name = "shadow"
+shadow_value = 0xDCE0E8
+yellow_name = "yellow"
+yellow_value = 0xDF8E1D
+peach_name = "peach"
+peach_value = 0xFE640B
+maroon_name = "maroon"
+maroon_value = 0xE64553
+red_name = "red"
+red_value = 0xD20F39
+
+[theme_light_role]
+color_base = "base"
+color_tile = "surface_0"
+color_selected = "peach"
+color_chevron = "maroon"
+color_cell_marker_border = "red"
+color_cell_marker_fill = "text"
+color_label_text = "text"
 
 [input]
 input_key_escape = 256 # ESCAPE
@@ -45,3 +75,4 @@ input_key_north_east = 69 # E
 input_key_south_west = 65 # A
 input_key_south = 83 # S
 input_key_south_east = 68 # D
+input_key_theme = 77 # M

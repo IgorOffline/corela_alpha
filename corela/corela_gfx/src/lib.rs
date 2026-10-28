@@ -32,7 +32,8 @@ unsafe extern "C" {
     fn gfx_quit();
     fn gfx_renderer_init(clear_r: f32, clear_g: f32, clear_b: f32);
     fn gfx_frame_begin();
-    fn gfx_draw_label(index: i32, x: f32, y: f32, background: u32, selected: bool);
+    fn gfx_set_clear(clear_r: f32, clear_g: f32, clear_b: f32);
+    fn gfx_draw_label(index: i32, x: f32, y: f32, background: u32, text: u32, selected: bool);
     fn gfx_draw_circle(x: f32, y: f32, radius: f32, color: u32);
     fn gfx_draw_icon(
         icon: *const IconDesc,
@@ -73,7 +74,6 @@ pub struct Window {
     pub clear: u32,
 }
 
-/// The application interface: `run` calls these from the window's event loop.
 pub trait App {
     fn frame(&mut self, frame: &mut Frame);
     fn key_down(&mut self, key_code: i32);
@@ -93,9 +93,19 @@ impl Frame {
         unsafe { gfx_draw_hexagon(x, y, radius, color) }
     }
 
-    pub fn label(&mut self, index: i32, center: Point, background: u32, selected: bool) {
+    pub fn clear(&mut self, color: u32) {
+        unsafe {
+            gfx_set_clear(
+                channel(color, RED_SHIFT),
+                channel(color, GREEN_SHIFT),
+                channel(color, BLUE_SHIFT),
+            )
+        }
+    }
+
+    pub fn label(&mut self, index: i32, center: Point, background: u32, text: u32, selected: bool) {
         let (x, y) = center;
-        unsafe { gfx_draw_label(index, x, y, background, selected) }
+        unsafe { gfx_draw_label(index, x, y, background, text, selected) }
     }
 
     pub fn circle(&mut self, center: Point, radius: f32, color: u32) {
@@ -103,8 +113,6 @@ impl Frame {
         unsafe { gfx_draw_circle(x, y, radius, color) }
     }
 
-    /// Fills `icon` centered at `at`, its +x axis turned towards `direction`
-    /// and its viewBox fitted into `size` pixels.
     pub fn icon(&mut self, icon: &Icon, at: Point, direction: Point, size: f32, color: u32) {
         let (x, y) = at;
         let (dx, dy) = direction;
@@ -128,7 +136,6 @@ impl HexLayout {
     pub fn to_pixel(&self, q: i32, r: i32) -> Point {
         (
             self.origin.0 + self.size * HEX_COLUMN_SPACING_TO_SIZE_RATIO * q as f32,
-            // every column is shifted down by half a row relative to the previous one
             self.origin.1 + self.size * HEX_ROW_SPACING_TO_SIZE_RATIO * (r as f32 + q as f32 / 2.0),
         )
     }
@@ -150,7 +157,7 @@ struct Running {
     app: Box<dyn App>,
 }
 
-/// The C callbacks take no arguments, so they find the app through this.
+/// The C callbacks take no arguments
 static RUNNING: AtomicPtr<Running> = AtomicPtr::new(ptr::null_mut());
 
 fn running() -> &'static mut Running {
@@ -182,7 +189,6 @@ extern "C" fn on_key_down(key_code: i32) {
     running().app.key_down(key_code);
 }
 
-/// Opens the window and drives `app` until the window closes.
 pub fn run(window: &Window, app: Box<dyn App>) {
     let state = Box::into_raw(Box::new(Running {
         clear: window.clear,
