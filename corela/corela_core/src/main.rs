@@ -150,18 +150,17 @@ impl App for Corela {
 
     fn key_down(&mut self, key_code: i32) {
         let config = &self.config;
-        // Q W E / A S D mirror the six hex directions on the keyboard
-        let event = if key_code == config.key_w {
+        let event = if key_code == config.key_north {
             move_event(NORTH)
-        } else if key_code == config.key_s {
+        } else if key_code == config.key_south {
             move_event(SOUTH)
-        } else if key_code == config.key_e {
+        } else if key_code == config.key_north_east {
             move_event(NORTH_EAST)
-        } else if key_code == config.key_d {
+        } else if key_code == config.key_south_east {
             move_event(SOUTH_EAST)
-        } else if key_code == config.key_q {
+        } else if key_code == config.key_north_west {
             move_event(NORTH_WEST)
-        } else if key_code == config.key_a {
+        } else if key_code == config.key_south_west {
             move_event(SOUTH_WEST)
         } else if key_code == config.key_escape {
             Event::Quit
