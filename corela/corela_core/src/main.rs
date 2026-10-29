@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use corela_gfx::{App, Frame, HexLayout, Window};
 
 use crate::config::{CONFIG_FILE_NAME, KEY_NAME, KEY_VERSION, SECTION_META, load_config};
-use model::{Config, Event, Flow, Gfx, Region, Theme};
+use model::{Config, Event, Flow, Gfx, Node, Theme};
 
 const NAME: &str = env!("CARGO_BIN_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -23,10 +23,6 @@ const SOUTH_EAST: (i32, i32) = (1, 0);
 const SOUTH: (i32, i32) = (0, 1);
 const SOUTH_WEST: (i32, i32) = (-1, 1);
 const NORTH_WEST: (i32, i32) = (-1, 0);
-
-// Axial (q, r) offsets for the six neighbors surrounding a cell.
-const HEX_NEIGHBOR_OFFSETS: [(i32, i32); 6] =
-    [NORTH_EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, NORTH_WEST, NORTH];
 
 /// `[meta] key` as a string, if the table has one.
 fn meta_string(table: &toml::Table, key: &str) -> Option<String> {
@@ -94,23 +90,6 @@ impl Corela {
             &self.config.light_theme
         }
     }
-
-    /// Whether a Center piece occupies `cell` on the current grid.
-    fn is_marker_or_neighbor(&self, cell: (i32, i32)) -> bool {
-        if self.gfx.region() != Region::Center {
-            return false;
-        }
-        let (marker_q, marker_r) = self.config.cell;
-        if cell == self.config.cell {
-            return true;
-        }
-        for (dq, dr) in HEX_NEIGHBOR_OFFSETS {
-            if cell == (marker_q + dq, marker_r + dr) {
-                return true;
-            }
-        }
-        false
-    }
 }
 
 impl App for Corela {
@@ -124,7 +103,6 @@ impl App for Corela {
         };
         frame.clear(theme.base_color);
         frame.footer(self.gfx.region().name(), theme.label_text_color);
-        let (cell_q, cell_r) = config.cell;
         let selected = self.gfx.selected();
         let cells = self.gfx.cells();
         for (index, cell) in cells.iter().enumerate() {
@@ -140,7 +118,7 @@ impl App for Corela {
             let radius = self.layout.size - self.geometry.hex_tile_inset;
             frame.hexagon(at, radius, color);
             // the marker and its chevrons cover these cells' labels
-            if !self.is_marker_or_neighbor((q, r)) {
+            if self.gfx.node_at((q, r)).is_none() {
                 let text_color = if active {
                     inverted_theme.label_text_color
                 } else {
@@ -150,37 +128,38 @@ impl App for Corela {
             }
         }
 
-        // The start element and arrows are pieces placed only on the Center grid.
-        if self.gfx.region() != Region::Center {
-            return;
-        }
-
-        let center = self.layout.to_pixel(cell_q, cell_r);
-        frame.circle(
-            center,
-            self.geometry.cell_marker_outer_radius,
-            theme.cell_marker_border_color,
-        );
-        frame.circle(
-            center,
-            self.geometry.cell_marker_inner_radius,
-            theme.cell_marker_fill_color,
-        );
-        for (dq, dr) in HEX_NEIGHBOR_OFFSETS {
-            let cell = (cell_q + dq, cell_r + dr);
+        for cell in cells {
             let at = self.layout.to_pixel(cell.0, cell.1);
-            let color = if cell == selected {
-                inverted_theme.chevron_color
-            } else {
-                theme.chevron_color
-            };
-            frame.icon(
-                &config.chevron_icon,
-                at,
-                (at.0 - center.0, at.1 - center.1),
-                self.geometry.chevron_size,
-                color,
-            );
+            match self.gfx.node_at(cell) {
+                Some(Node::BpmnStartNote) => {
+                    frame.circle(
+                        at,
+                        self.geometry.cell_marker_outer_radius,
+                        theme.cell_marker_border_color,
+                    );
+                    frame.circle(
+                        at,
+                        self.geometry.cell_marker_inner_radius,
+                        theme.cell_marker_fill_color,
+                    );
+                }
+                Some(Node::Arrow(direction)) => {
+                    let angle = f32::from(direction) * std::f32::consts::FRAC_PI_4;
+                    let color = if cell == selected {
+                        inverted_theme.chevron_color
+                    } else {
+                        theme.chevron_color
+                    };
+                    frame.icon(
+                        &config.chevron_icon,
+                        at,
+                        (angle.cos(), angle.sin()),
+                        self.geometry.chevron_size,
+                        color,
+                    );
+                }
+                None => {}
+            }
         }
     }
 
@@ -191,7 +170,13 @@ impl App for Corela {
             log::info!("core: {} theme", if self.dark { "dark" } else { "light" });
             return;
         }
-        let event = if key_code == config.key_north {
+        let event = if key_code == config.key_start {
+            Event::PlaceStart
+        } else if key_code == config.key_arrow {
+            Event::PlaceArrow
+        } else if key_code == config.key_remove {
+            Event::Remove
+        } else if key_code == config.key_north {
             move_event(NORTH)
         } else if key_code == config.key_south {
             move_event(SOUTH)

@@ -5,7 +5,6 @@ use std::path::{Path, PathBuf};
 pub const CONFIG_FILE_NAME: &str = "regina.toml";
 
 pub const SECTION_META: &str = "meta";
-const SECTION_BPMN: &str = "bpmn";
 const SECTION_ASSET: &str = "asset";
 const SECTION_GFX: &str = "gfx";
 const SECTION_INPUT: &str = "input";
@@ -116,10 +115,9 @@ pub fn load_config(path: &Path) -> Config {
     Config {
         name: reader.string(SECTION_META, KEY_NAME).to_owned(),
         version: reader.string(SECTION_META, KEY_VERSION).to_owned(),
-        cell: (
-            reader.int(SECTION_BPMN, "cell_x") as i32,
-            reader.int(SECTION_BPMN, "cell_y") as i32,
-        ),
+        key_start: reader.int(SECTION_INPUT, "input_key_start") as i32,
+        key_arrow: reader.int(SECTION_INPUT, "input_key_arrow") as i32,
+        key_remove: reader.int(SECTION_INPUT, "input_key_remove") as i32,
         key_escape: reader.int(SECTION_INPUT, "input_key_escape") as i32,
         key_north_west: reader.int(SECTION_INPUT, "input_key_north_west") as i32,
         key_north: reader.int(SECTION_INPUT, "input_key_north") as i32,

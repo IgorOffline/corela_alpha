@@ -3,6 +3,9 @@ use corela_gfx::Icon;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Event {
     Move { dq: i32, dr: i32 },
+    PlaceStart,
+    PlaceArrow,
+    Remove,
     Quit,
 }
 
@@ -29,10 +32,25 @@ impl Region {
     }
 }
 
+/// A project may contain only one start node across all regions.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Node {
+    BpmnStartNote,
+    Arrow(u8),
+}
+
+#[derive(Clone, Copy, Debug)]
+struct PlacedNode {
+    region: Region,
+    cell: (i32, i32),
+    node: Node,
+}
+
 pub struct Gfx {
     region: Region,
     radius: i32,
     selected: (i32, i32),
+    nodes: Vec<PlacedNode>,
 }
 
 impl Gfx {
@@ -41,6 +59,7 @@ impl Gfx {
             region: Region::Center,
             radius,
             selected: CENTER_CELL,
+            nodes: Vec::new(),
         }
     }
 
@@ -50,6 +69,13 @@ impl Gfx {
 
     pub fn selected(&self) -> (i32, i32) {
         self.selected
+    }
+
+    pub fn node_at(&self, cell: (i32, i32)) -> Option<Node> {
+        self.nodes
+            .iter()
+            .find(|placed| placed.region == self.region && placed.cell == cell)
+            .map(|placed| placed.node)
     }
 
     pub fn in_bounds(&self, cell: (i32, i32)) -> bool {
@@ -93,6 +119,44 @@ impl Gfx {
                 }
                 Flow::Continue
             }
+            Event::PlaceStart => {
+                if self.node_at(self.selected).is_none()
+                    && !self
+                        .nodes
+                        .iter()
+                        .any(|placed| placed.node == Node::BpmnStartNote)
+                {
+                    self.nodes.push(PlacedNode {
+                        region: self.region,
+                        cell: self.selected,
+                        node: Node::BpmnStartNote,
+                    });
+                }
+                Flow::Continue
+            }
+            Event::PlaceArrow => {
+                if let Some(placed) = self
+                    .nodes
+                    .iter_mut()
+                    .find(|placed| placed.region == self.region && placed.cell == self.selected)
+                {
+                    if let Node::Arrow(direction) = &mut placed.node {
+                        *direction = (*direction + 1) % 8;
+                    }
+                } else {
+                    self.nodes.push(PlacedNode {
+                        region: self.region,
+                        cell: self.selected,
+                        node: Node::Arrow(0),
+                    });
+                }
+                Flow::Continue
+            }
+            Event::Remove => {
+                self.nodes
+                    .retain(|placed| placed.region != self.region || placed.cell != self.selected);
+                Flow::Continue
+            }
             Event::Quit => {
                 log::info!("core: quit");
                 Flow::Quit
@@ -114,7 +178,9 @@ pub struct Theme {
 pub struct Config {
     pub name: String,
     pub version: String,
-    pub cell: (i32, i32),
+    pub key_start: i32,
+    pub key_arrow: i32,
+    pub key_remove: i32,
     pub key_escape: i32,
     pub key_north_west: i32,
     pub key_north: i32,
