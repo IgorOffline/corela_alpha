@@ -1,6 +1,8 @@
 #ifndef CORELA_GEOMETRY_H
 #define CORELA_GEOMETRY_H
 
+#include <glib.h>
+
 #define CELL_MARKER_OUTER_RADIUS 15.75f
 #define CELL_MARKER_INNER_RADIUS 14.25f
 #define CHEVRON_SIZE 36.0f
@@ -16,12 +18,12 @@
 
 // Mirrored by `corela_gfx::Geometry`; keep the field order in sync.
 typedef struct {
-  float cell_marker_outer_radius;
-  float cell_marker_inner_radius;
-  float chevron_size;
-  int hex_radius;
-  float hex_size;
-  float hex_tile_inset;
+  gfloat cell_marker_outer_radius;
+  gfloat cell_marker_inner_radius;
+  gfloat chevron_size;
+  gint hex_radius;
+  gfloat hex_size;
+  gfloat hex_tile_inset;
 } gfx_geometry;
 
 #endif

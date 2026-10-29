@@ -1,2 +1,6 @@
 [net]
 offline = true
+
+# corela_gfx_impl links the GLib in /opt (see GLIB_PREFIX in its build.rs);
+[target.'cfg(target_os = "linux")']
+rustflags = ["-C", "link-arg=-Wl,-rpath,/opt/glib-2.90.1/lib"]
