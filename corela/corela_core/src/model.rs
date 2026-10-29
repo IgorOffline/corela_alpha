@@ -12,10 +12,25 @@ pub enum Flow {
     Quit,
 }
 
-/// The board's middle cell in axial coordinates.
 const CENTER_CELL: (i32, i32) = (0, 0);
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Region {
+    Center,
+    North,
+}
+
+impl Region {
+    pub fn name(self) -> &'static std::ffi::CStr {
+        match self {
+            Self::Center => c"Center",
+            Self::North => c"North",
+        }
+    }
+}
+
 pub struct Gfx {
+    region: Region,
     radius: i32,
     selected: (i32, i32),
 }
@@ -23,22 +38,26 @@ pub struct Gfx {
 impl Gfx {
     pub fn new(radius: i32) -> Self {
         Self {
+            region: Region::Center,
             radius,
             selected: CENTER_CELL,
         }
+    }
+
+    pub fn region(&self) -> Region {
+        self.region
     }
 
     pub fn selected(&self) -> (i32, i32) {
         self.selected
     }
 
-    /// Whether the cell is at most `radius` steps from the center.
     pub fn in_bounds(&self, cell: (i32, i32)) -> bool {
         let (q, r) = cell;
         q.abs().max(r.abs()).max((q + r).abs()) <= self.radius
     }
 
-    /// Every cell of the board, `q`-major.
+    /// `q`-major.
     pub fn cells(&self) -> Vec<(i32, i32)> {
         let mut cells = Vec::new();
         for q in -self.radius..=self.radius {
@@ -54,6 +73,19 @@ impl Gfx {
     pub fn handle(&mut self, event: Event) -> Flow {
         match event {
             Event::Move { dq, dr } => {
+                if self.region == Region::Center && self.selected == (0, -4) && (dq, dr) == (0, -1)
+                {
+                    self.region = Region::North;
+                    self.selected = (0, 4);
+                    log::info!("core: entered North region");
+                    return Flow::Continue;
+                }
+                if self.region == Region::North && self.selected == (0, 4) && (dq, dr) == (0, 1) {
+                    self.region = Region::Center;
+                    self.selected = (0, -4);
+                    log::info!("core: entered Center region");
+                    return Flow::Continue;
+                }
                 let cell = (self.selected.0 + dq, self.selected.1 + dr);
                 if self.in_bounds(cell) {
                     self.selected = cell;

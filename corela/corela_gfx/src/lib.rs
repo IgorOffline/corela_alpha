@@ -34,6 +34,8 @@ unsafe extern "C" {
     fn gfx_frame_begin();
     fn gfx_set_clear(clear_r: f32, clear_g: f32, clear_b: f32);
     fn gfx_draw_label(index: i32, x: f32, y: f32, background: u32, text: u32, selected: bool);
+    fn gfx_set_font(data: *const u8, length: i32);
+    fn gfx_draw_footer(text: *const c_char, color: u32);
     fn gfx_draw_circle(x: f32, y: f32, radius: f32, color: u32);
     fn gfx_draw_icon(
         icon: *const IconDesc,
@@ -108,6 +110,10 @@ impl Frame {
         unsafe { gfx_draw_label(index, x, y, background, text, selected) }
     }
 
+    pub fn footer(&mut self, text: &CStr, color: u32) {
+        unsafe { gfx_draw_footer(text.as_ptr(), color) }
+    }
+
     pub fn circle(&mut self, center: Point, radius: f32, color: u32) {
         let (x, y) = center;
         unsafe { gfx_draw_circle(x, y, radius, color) }
@@ -164,6 +170,8 @@ fn running() -> &'static mut Running {
     unsafe { &mut *RUNNING.load(Ordering::Acquire) }
 }
 
+static FONT: &[u8] = include_bytes!("../../corela_gfx_impl/asset/font/IntelOneMono-Medium.ttf");
+
 extern "C" fn on_init() {
     let clear = running().clear;
     unsafe {
@@ -171,7 +179,8 @@ extern "C" fn on_init() {
             channel(clear, RED_SHIFT),
             channel(clear, GREEN_SHIFT),
             channel(clear, BLUE_SHIFT),
-        )
+        );
+        gfx_set_font(FONT.as_ptr(), FONT.len() as i32);
     }
 }
 
