@@ -2,10 +2,6 @@
 name = "corela"
 version = "0.1.0"
 
-[bpmn]
-cell_x = -3
-cell_y = 3
-
 [asset]
 icon_chevron = "corela_gfx_impl/asset/remixicon/remix-icon-arrow-right-double-line.svg"
 
@@ -69,6 +65,9 @@ color_label_text = "text"
 
 [input]
 input_key_escape = 256 # ESCAPE
+input_key_start = 48 # top-row 0
+input_key_arrow = 49 # top-row 1
+input_key_remove = 88 # X
 input_key_north_west = 81 # Q
 input_key_north = 87 # W
 input_key_north_east = 69 # E
