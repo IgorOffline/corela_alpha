@@ -2,8 +2,6 @@
 
 #define SOKOL_IMPL
 #define SOKOL_NO_ENTRY
-#include <stdint.h>
-#include <stdio.h>
 #include <sys/utsname.h>
 
 #include "sokol_app.h"
@@ -13,17 +11,17 @@
 
 // Mirrored by `corela_gfx::Desc`; keep the field order in sync.
 typedef struct {
-  const char* title;
-  int32_t width;
-  int32_t height;
+  const gchar* title;
+  gint32 width;
+  gint32 height;
   void (*init)(void);
   void (*frame)(void);
   void (*cleanup)(void);
-  void (*key_down)(int32_t key_code);
+  void (*key_down)(gint32 key_code);
 } gfx_desc;
 
-static void (*g_init)(void);
-static void (*g_key_down)(int32_t);
+static void (*gfx_init)(void);
+static void (*gfx_key_down)(gint32);
 
 // _MOTIF_WM_HINTS tells the window manager which window controls to offer.
 // The bit values come from Motif's <Xm/MwmUtil.h>, which is not a dependency.
@@ -37,9 +35,9 @@ static void (*g_key_down)(int32_t);
 
 static void configure_fixed_window(void) {
   Display* display = (Display*)sapp_x11_get_display();
-  const Window window = (Window)(uintptr_t)sapp_x11_get_window();
+  const Window window = (Window)(guintptr)sapp_x11_get_window();
   XSizeHints hints = {0};
-  long supplied = 0;
+  glong supplied = 0;
   XGetWMNormalHints(display, window, &hints, &supplied);
   hints.flags |= PMinSize | PMaxSize;
   hints.min_width = hints.max_width = sapp_width();
@@ -47,9 +45,9 @@ static void configure_fixed_window(void) {
   XSetWMNormalHints(display, window, &hints);
 
   const struct {
-    unsigned long flags, functions, decorations;
-    long input_mode;
-    unsigned long status;
+    gulong flags, functions, decorations;
+    glong input_mode;
+    gulong status;
   } motif = {
       .flags = MOTIF_HINTS_FUNCTIONS,
       // no resize or maximize
@@ -57,42 +55,52 @@ static void configure_fixed_window(void) {
   };
   const Atom property = XInternAtom(display, MOTIF_WM_HINTS_ATOM_NAME, False);
   XChangeProperty(display, window, property, property, X11_PROPERTY_FORMAT_32,
-                  PropModeReplace, (const unsigned char*)&motif,
-                  sizeof(motif) / sizeof(long));
+                  PropModeReplace, (const guchar*)&motif,
+                  sizeof(motif) / sizeof(glong));
   XFlush(display);
 }
 
-static const char* gl_info(GLenum name) {
+static const gchar* gl_info(GLenum name) {
   const GLubyte* value = glGetString(name);
-  return value ? (const char*)value : "Unknown";
+  return value ? (const gchar*)value : "Unknown";
 }
 
 static void log_system_info(void) {
   struct utsname system;
   if (uname(&system) == 0) {
-    fprintf(stderr, "System: %s %s - %s - X11\n", system.sysname,
-            system.release, system.machine);
+    g_printerr("System: %s %s - %s - X11\n", system.sysname, system.release,
+               system.machine);
   } else {
-    fprintf(stderr, "System: Unknown - X11\n");
+    g_printerr("System: Unknown - X11\n");
   }
-  fprintf(stderr, "OpenGL %s - Sokol - Using Device: %s - %s\n",
-          gl_info(GL_VERSION), gl_info(GL_VENDOR), gl_info(GL_RENDERER));
-  fprintf(stderr, "GLSL %s\n\n", gl_info(GL_SHADING_LANGUAGE_VERSION));
+  g_printerr("OpenGL %s - Sokol - Using Device: %s - %s\n", gl_info(GL_VERSION),
+             gl_info(GL_VENDOR), gl_info(GL_RENDERER));
+  g_printerr("GLSL %s\n\n", gl_info(GL_SHADING_LANGUAGE_VERSION));
+}
+
+// sokol_app and sokol_gfx allocate through GLib's allocator
+static gpointer glib_alloc(gsize size, G_GNUC_UNUSED gpointer user_data) {
+  return g_malloc(size);
+}
+
+static void glib_free(gpointer ptr, G_GNUC_UNUSED gpointer user_data) {
+  g_free(ptr);
 }
 
 static void on_init(void) {
   configure_fixed_window();
   sg_setup(&(sg_desc){
       .environment = sglue_environment(),
+      .allocator = {.alloc_fn = glib_alloc, .free_fn = glib_free},
       .logger.func = slog_func,
   });
   log_system_info();
-  if (g_init) g_init();
+  if (gfx_init) gfx_init();
 }
 
 static void on_event(const sapp_event* e) {
-  if (e->type == SAPP_EVENTTYPE_KEY_DOWN && !e->key_repeat && g_key_down)
-    g_key_down((int32_t)e->key_code);
+  if (e->type == SAPP_EVENTTYPE_KEY_DOWN && !e->key_repeat && gfx_key_down)
+    gfx_key_down((gint32)e->key_code);
 }
 
 static void on_cleanup(void) {
@@ -100,16 +108,16 @@ static void on_cleanup(void) {
   sg_shutdown();
 }
 
-static void (*g_user_cleanup)(void);
+static void (*gfx_user_cleanup)(void);
 static void on_cleanup_wrapped(void) {
-  if (g_user_cleanup) g_user_cleanup();
+  if (gfx_user_cleanup) gfx_user_cleanup();
   on_cleanup();
 }
 
-int32_t gfx_run(const gfx_desc* d) {
-  g_init = d->init;
-  g_key_down = d->key_down;
-  g_user_cleanup = d->cleanup;
+gint32 gfx_run(const gfx_desc* d) {
+  gfx_init = d->init;
+  gfx_key_down = d->key_down;
+  gfx_user_cleanup = d->cleanup;
   sapp_run(&(sapp_desc){
       .init_cb = on_init,
       .frame_cb = d->frame,
@@ -122,6 +130,7 @@ int32_t gfx_run(const gfx_desc* d) {
       .depth_format = SAPP_PIXELFORMAT_DEPTH_STENCIL,
       .gl = {.major_version = OPENGL_MAJOR_VERSION,
              .minor_version = OPENGL_MINOR_VERSION},
+      .allocator = {.alloc_fn = glib_alloc, .free_fn = glib_free},
       .logger.func = slog_func,
   });
   return 0;

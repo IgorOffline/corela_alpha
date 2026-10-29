@@ -1,8 +1,9 @@
 #ifndef CORELA_DRAW_H
 #define CORELA_DRAW_H
 
+// `bool` (not gboolean) where Rust passes its own one-byte `bool`
+#include <glib.h>
 #include <stdbool.h>
-#include <stdint.h>
 
 #include "geometry.h"
 
@@ -31,28 +32,28 @@ enum {
 
 // Mirrored by `corela_gfx::icon::IconDesc`; keep the field order in sync.
 typedef struct {
-  const uint8_t* verbs;
-  int32_t verb_count;
+  const guint8* verbs;
+  gint32 verb_count;
   // one point per move/line, three per bezier, none per close
-  const float (*points)[2];
-  float view_box[VIEW_BOX_COUNT];
+  const gfloat (*points)[2];
+  gfloat view_box[VIEW_BOX_COUNT];
 } gfx_icon;
 
-void gfx_renderer_init(float clear_r, float clear_g, float clear_b);
+void gfx_renderer_init(gfloat clear_r, gfloat clear_g, gfloat clear_b);
 void gfx_renderer_cleanup(void);
 void gfx_frame_begin(void);
 void gfx_frame_end(void);
-void gfx_draw_rectangle(float x, float y, float width, float height,
-                        uint32_t color);
-void gfx_draw_hexagon(float x, float y, float radius, uint32_t color);
-void gfx_set_clear(float clear_r, float clear_g, float clear_b);
-void gfx_draw_label(int32_t index, float x, float y, uint32_t background,
-                    uint32_t text, bool selected);
-void gfx_set_font(const uint8_t* data, int32_t length);
-void gfx_draw_footer(const char* text, uint32_t color);
-void gfx_draw_circle(float x, float y, float radius, uint32_t color);
-void gfx_draw_icon(const gfx_icon* icon, float x, float y, float dx, float dy,
-                   float size, uint32_t color);
+void gfx_draw_rectangle(gfloat x, gfloat y, gfloat width, gfloat height,
+                        guint32 color);
+void gfx_draw_hexagon(gfloat x, gfloat y, gfloat radius, guint32 color);
+void gfx_set_clear(gfloat clear_r, gfloat clear_g, gfloat clear_b);
+void gfx_draw_label(gint32 index, gfloat x, gfloat y, guint32 background,
+                    guint32 text, bool selected);
+void gfx_set_font(const guint8* data, gint32 length);
+void gfx_draw_footer(const gchar* text, guint32 color);
+void gfx_draw_circle(gfloat x, gfloat y, gfloat radius, guint32 color);
+void gfx_draw_icon(const gfx_icon* icon, gfloat x, gfloat y, gfloat dx,
+                   gfloat dy, gfloat size, guint32 color);
 gfx_geometry gfx_get_geometry(void);
 
 #endif
