@@ -199,6 +199,26 @@ void gfx_draw_label(int32_t index, float x, float y, uint32_t background,
   }
 }
 
+void gfx_set_font(const uint8_t* data, int32_t length) {
+  // Rust owns these static bytes for the lifetime of the renderer.
+  const int font = nvgCreateFontMem(g_vg, "ui", (unsigned char*)data, length, 0);
+  assert(font >= 0 && "UI font creation failed");
+}
+
+void gfx_draw_footer(const char* text, uint32_t color) {
+  const float margin = 16.0f;
+  const float height = (float)sapp_height() / sapp_dpi_scale();
+  nvgSave(g_vg);
+  nvgFontFace(g_vg, "ui");
+  nvgFontSize(g_vg, 20.0f);
+  nvgTextAlign(g_vg, NVG_ALIGN_LEFT | NVG_ALIGN_BOTTOM);
+  nvgFillColor(g_vg, nvgRGB(color_channel(color, COLOR_RED_SHIFT),
+                            color_channel(color, COLOR_GREEN_SHIFT),
+                            color_channel(color, COLOR_BLUE_SHIFT)));
+  nvgText(g_vg, margin, height - margin, text, NULL);
+  nvgRestore(g_vg);
+}
+
 void gfx_draw_circle(float x, float y, float radius, uint32_t color) {
   float points[CIRCLE_SEGMENT_COUNT][2];
   for (int i = 0; i < CIRCLE_SEGMENT_COUNT; i++) {

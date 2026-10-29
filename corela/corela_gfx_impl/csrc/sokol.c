@@ -3,6 +3,8 @@
 #define SOKOL_IMPL
 #define SOKOL_NO_ENTRY
 #include <stdint.h>
+#include <stdio.h>
+#include <sys/utsname.h>
 
 #include "sokol_app.h"
 #include "sokol_gfx.h"
@@ -60,12 +62,31 @@ static void configure_fixed_window(void) {
   XFlush(display);
 }
 
+static const char* gl_info(GLenum name) {
+  const GLubyte* value = glGetString(name);
+  return value ? (const char*)value : "Unknown";
+}
+
+static void log_system_info(void) {
+  struct utsname system;
+  if (uname(&system) == 0) {
+    fprintf(stderr, "System: %s %s - %s - X11\n", system.sysname,
+            system.release, system.machine);
+  } else {
+    fprintf(stderr, "System: Unknown - X11\n");
+  }
+  fprintf(stderr, "OpenGL %s - Sokol - Using Device: %s - %s\n",
+          gl_info(GL_VERSION), gl_info(GL_VENDOR), gl_info(GL_RENDERER));
+  fprintf(stderr, "GLSL %s\n\n", gl_info(GL_SHADING_LANGUAGE_VERSION));
+}
+
 static void on_init(void) {
   configure_fixed_window();
   sg_setup(&(sg_desc){
       .environment = sglue_environment(),
       .logger.func = slog_func,
   });
+  log_system_info();
   if (g_init) g_init();
 }
 

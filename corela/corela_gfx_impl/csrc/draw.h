@@ -48,6 +48,8 @@ void gfx_draw_hexagon(float x, float y, float radius, uint32_t color);
 void gfx_set_clear(float clear_r, float clear_g, float clear_b);
 void gfx_draw_label(int32_t index, float x, float y, uint32_t background,
                     uint32_t text, bool selected);
+void gfx_set_font(const uint8_t* data, int32_t length);
+void gfx_draw_footer(const char* text, uint32_t color);
 void gfx_draw_circle(float x, float y, float radius, uint32_t color);
 void gfx_draw_icon(const gfx_icon* icon, float x, float y, float dx, float dy,
                    float size, uint32_t color);

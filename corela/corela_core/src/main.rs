@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use corela_gfx::{App, Frame, HexLayout, Window};
 
 use crate::config::{CONFIG_FILE_NAME, KEY_NAME, KEY_VERSION, SECTION_META, load_config};
-use model::{Config, Event, Flow, Gfx, Theme};
+use model::{Config, Event, Flow, Gfx, Region, Theme};
 
 const NAME: &str = env!("CARGO_BIN_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -95,8 +95,11 @@ impl Corela {
         }
     }
 
-    /// Whether `cell` is the marker cell or one of its six neighbors.
+    /// Whether a Center piece occupies `cell` on the current grid.
     fn is_marker_or_neighbor(&self, cell: (i32, i32)) -> bool {
+        if self.gfx.region() != Region::Center {
+            return false;
+        }
         let (marker_q, marker_r) = self.config.cell;
         if cell == self.config.cell {
             return true;
@@ -120,6 +123,7 @@ impl App for Corela {
             &config.dark_theme
         };
         frame.clear(theme.base_color);
+        frame.footer(self.gfx.region().name(), theme.label_text_color);
         let (cell_q, cell_r) = config.cell;
         let selected = self.gfx.selected();
         let cells = self.gfx.cells();
@@ -144,6 +148,11 @@ impl App for Corela {
                 };
                 frame.label(label, at, color, text_color, active);
             }
+        }
+
+        // The start element and arrows are pieces placed only on the Center grid.
+        if self.gfx.region() != Region::Center {
+            return;
         }
 
         let center = self.layout.to_pixel(cell_q, cell_r);
@@ -212,7 +221,8 @@ fn main() {
 
     let path = find_regina();
     let config = load_config(&path);
-    log::info!("{} {} ({})", config.name, config.version, path.display());
+    log::info!("{} v{}", config.name, config.version);
+    log::debug!("Configuration: {}", path.display());
 
     let window = Window {
         title: WINDOW_TITLE,
