@@ -27,6 +27,8 @@ enum Verb {
 pub struct Icon {
     view_box: [f32; VIEW_BOX_COUNT],
     verbs: Vec<Verb>,
+    /// `verbs.len()`, checked once to fit the C side's `int32_t`.
+    verb_count: i32,
     points: Vec<[f32; 2]>,
 }
 
@@ -40,8 +42,14 @@ pub(crate) struct IconDesc {
 }
 
 impl Icon {
-    pub fn parse(svg: &str) -> Result<Icon, &'static str> {
-        let mut view_box: Option<[f32; VIEW_BOX_COUNT]> = None;
+    /// Parses the `viewBox` and every `<path d="...">` of an SVG document.
+    ///
+    /// # Errors
+    /// A short description if there is no `<svg>` with a usable `viewBox`, no
+    /// path data, too many path commands, or the path data is malformed or
+    /// uses an arc command.
+    pub fn parse(svg: &str) -> Result<Self, &'static str> {
+        let mut found_view_box: Option<[f32; VIEW_BOX_COUNT]> = None;
         let mut builder = Builder::default();
         let mut is_first_piece = true;
         for piece in svg.split('<') {
@@ -57,7 +65,7 @@ impl Icon {
                     Some(value) => value,
                     None => return Err("<svg> has no viewBox"),
                 };
-                view_box = Some(parse_view_box(&value)?);
+                found_view_box = Some(parse_view_box(&value)?);
             } else if name == "path" {
                 let data = match attribute(tag, "d") {
                     Some(data) => data,
@@ -66,27 +74,29 @@ impl Icon {
                 builder.path(&data)?;
             }
         }
-        let view_box = match view_box {
+        let view_box = match found_view_box {
             Some(view_box) => view_box,
             None => return Err("no <svg> element"),
         };
         if builder.verbs.is_empty() {
             return Err("no <path> data");
         }
-        if builder.verbs.len() > i32::MAX as usize {
-            return Err("too many path commands");
-        }
-        Ok(Icon {
+        let verb_count = match i32::try_from(builder.verbs.len()) {
+            Ok(count) => count,
+            Err(_) => return Err("too many path commands"),
+        };
+        Ok(Self {
             view_box,
             verbs: builder.verbs,
+            verb_count,
             points: builder.points,
         })
     }
 
-    pub(crate) fn desc(&self) -> IconDesc {
+    pub(crate) const fn desc(&self) -> IconDesc {
         IconDesc {
             verbs: self.verbs.as_ptr(),
-            verb_count: self.verbs.len() as i32,
+            verb_count: self.verb_count,
             points: self.points.as_ptr(),
             view_box: self.view_box,
         }
@@ -95,8 +105,8 @@ impl Icon {
 
 /// `text` up to (not including) the first `end`, or all of `text`.
 fn text_before(text: &str, end: char) -> &str {
-    match text.find(end) {
-        Some(index) => &text[..index],
+    match text.split_once(end) {
+        Some((before, _)) => before,
         None => text,
     }
 }
@@ -105,7 +115,8 @@ fn text_before(text: &str, end: char) -> &str {
 fn tag_name(tag: &str) -> &str {
     for (index, c) in tag.char_indices() {
         if c.is_whitespace() || c == '/' {
-            return &tag[..index];
+            // char_indices only yields character boundaries, so this is Some
+            return tag.get(..index).unwrap_or(tag);
         }
     }
     tag
@@ -121,29 +132,31 @@ fn ends_with_whitespace(text: &str) -> bool {
 /// The value of `name="..."` (or `name='...'`) inside `tag`.
 fn attribute(tag: &str, name: &str) -> Option<String> {
     let mut search_from = 0;
-    while let Some(found) = tag[search_from..].find(name) {
+    loop {
+        let found = tag.get(search_from..)?.find(name)?;
         let at = search_from + found;
         search_from = at + name.len();
         // `name` must be a whole attribute name, not the end of a longer one
-        if !ends_with_whitespace(&tag[..at]) {
+        if !ends_with_whitespace(tag.get(..at)?) {
             continue;
         }
-        let after_name = tag[search_from..].trim_start();
-        if !after_name.starts_with('=') {
-            continue;
-        }
-        let after_equals = after_name[1..].trim_start();
+        let after_name = tag.get(search_from..)?.trim_start();
+        let after_equals = match after_name.strip_prefix('=') {
+            Some(rest) => rest.trim_start(),
+            None => continue,
+        };
         let quote = match after_equals.chars().next() {
             Some(c) if c == '"' || c == '\'' => c,
             _ => return None,
         };
-        let value = &after_equals[1..];
-        let end = value.find(quote)?;
-        return Some(String::from(&value[..end]));
+        let (value, _) = after_equals.strip_prefix(quote)?.split_once(quote)?;
+        return Some(String::from(value));
     }
-    None
 }
 
+/// # Errors
+/// Unless `value` is exactly four finite numbers with a positive width and
+/// height.
 fn parse_view_box(value: &str) -> Result<[f32; VIEW_BOX_COUNT], &'static str> {
     let mut scanner = Scanner::new(value);
     let mut view_box = [0.0; VIEW_BOX_COUNT];
@@ -168,9 +181,9 @@ fn is_sign(byte: Option<u8>) -> bool {
     byte == Some(b'+') || byte == Some(b'-')
 }
 
-fn is_digit(byte: Option<u8>) -> bool {
+const fn is_digit(byte: Option<u8>) -> bool {
     match byte {
-        Some(byte) => byte.is_ascii_digit(),
+        Some(value) => value.is_ascii_digit(),
         None => false,
     }
 }
@@ -183,8 +196,8 @@ struct Scanner {
 }
 
 impl Scanner {
-    fn new(text: &str) -> Scanner {
-        Scanner {
+    fn new(text: &str) -> Self {
+        Self {
             text: String::from(text),
             position: 0,
         }
@@ -192,20 +205,16 @@ impl Scanner {
 
     /// The next unread character, without consuming it.
     fn peek(&self) -> Option<char> {
-        self.text[self.position..].chars().next()
+        self.text.get(self.position..)?.chars().next()
     }
 
     fn byte_at(&self, index: usize) -> Option<u8> {
-        if index < self.text.len() {
-            Some(self.text.as_bytes()[index])
-        } else {
-            None
-        }
+        self.text.as_bytes().get(index).copied()
     }
 
-    /// The index of the first non-digit at or after `index`.
-    fn skip_digits(&self, index: usize) -> usize {
-        let mut index = index;
+    /// The index of the first non-digit at or after `start`.
+    fn skip_digits(&self, start: usize) -> usize {
+        let mut index = start;
         while is_digit(self.byte_at(index)) {
             index += 1;
         }
@@ -232,7 +241,7 @@ impl Scanner {
         match self.peek() {
             Some(c) if c.is_ascii_alphabetic() => {
                 self.position += 1;
-                Some(c as u8)
+                u8::try_from(c).ok()
             }
             _ => None,
         }
@@ -247,6 +256,9 @@ impl Scanner {
     }
 
     /// Reads `[sign] digits [. digits] [e [sign] digits]`.
+    ///
+    /// # Errors
+    /// "malformed number" if the text there is not a number.
     fn number(&mut self) -> Result<f32, &'static str> {
         self.skip_separators();
         let mut end = self.position;
@@ -267,15 +279,21 @@ impl Scanner {
                 end = self.skip_digits(exponent);
             }
         }
-        let parsed = self.text[self.position..end].parse::<f32>();
+        let parsed = match self.text.get(self.position..end) {
+            Some(digits) => digits.parse::<f32>().ok(),
+            None => None,
+        };
         self.position = end;
         match parsed {
-            Ok(number) => Ok(number),
-            Err(_) => Err("malformed number"),
+            Some(number) => Ok(number),
+            None => Err("malformed number"),
         }
     }
 
     /// Reads an `x y` pair, offset by `origin` (zero for absolute commands).
+    ///
+    /// # Errors
+    /// "malformed number" if either coordinate is not a number.
     fn point(&mut self, origin: [f32; 2]) -> Result<[f32; 2], &'static str> {
         let x = origin[0] + self.number()?;
         let y = origin[1] + self.number()?;
@@ -299,6 +317,11 @@ struct Builder {
 }
 
 impl Builder {
+    /// Appends the commands of one `<path d="...">`.
+    ///
+    /// # Errors
+    /// If a command letter is missing, unknown or an arc, or a number is
+    /// malformed.
     fn path(&mut self, d: &str) -> Result<(), &'static str> {
         self.reference = None;
         let mut data = Scanner::new(d);
@@ -439,20 +462,25 @@ impl Builder {
             None => return,
         };
         // shoelace formula: the sign of the area gives the winding direction
-        let count = self.points.len() - first;
+        let subpath = match self.points.get(first..) {
+            Some(subpath) => subpath,
+            None => return,
+        };
+        let count = subpath.len();
         let mut area = 0.0;
         for offset in 0..count {
-            let [x0, y0] = self.points[first + offset];
-            let [x1, y1] = self.points[first + (offset + 1) % count];
-            area += x0 * y1 - x1 * y0;
+            let corner = subpath.get(offset);
+            let next_corner = subpath.get((offset + 1) % count);
+            if let (Some(&[x0, y0]), Some(&[x1, y1])) = (corner, next_corner) {
+                area += x0 * y1 - x1 * y0;
+            }
         }
         let orientation = area >= 0.0;
-        let reference = match self.reference {
-            Some(reference) => reference,
-            None => {
-                self.reference = Some(orientation);
-                orientation
-            }
+        let reference = if let Some(reference) = self.reference {
+            reference
+        } else {
+            self.reference = Some(orientation);
+            orientation
         };
         let verb = if orientation == reference {
             Verb::CloseSolid

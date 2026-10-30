@@ -1,1 +1,1 @@
-clang-format -i --style=Google corela_gfx_impl/csrc/sokol.c && cargo fmt && cargo test && G_DEBUG=fatal-criticals cargo run
+clang-format -i --style=Google corela_gfx_impl/csrc/sokol.c corela_gfx_impl/csrc/draw.c corela_gfx_impl/csrc/draw.h corela_gfx_impl/csrc/geometry.h && cargo fmt && cargo clippy --all-targets -- -D warnings && cargo test && G_DEBUG=fatal-criticals cargo run

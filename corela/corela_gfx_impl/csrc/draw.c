@@ -190,9 +190,12 @@ void gfx_draw_label(gint32 index, gfloat x, gfloat y, guint32 background,
   }
 }
 
-void gfx_set_font(const guint8* data, gint32 length) {
+void gfx_set_font(const guint8* data, gsize length) {
+  // nanovg takes the length as an int
+  g_return_if_fail(length <= G_MAXINT);
   // Rust owns these static bytes for the lifetime of the renderer.
-  const gint font = nvgCreateFontMem(gfx_vg, "ui", (guchar*)data, length, 0);
+  const gint font =
+      nvgCreateFontMem(gfx_vg, "ui", (guchar*)data, (gint)length, 0);
   if (font < 0) g_error("UI font creation failed");
 }
 

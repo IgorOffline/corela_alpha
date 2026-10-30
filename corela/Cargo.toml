@@ -15,11 +15,131 @@ cc = "1"
 env_logger = { version = "0.11", default-features = false }
 log = "0.4"
 
+# === === ===
+# lints
+# === === ===
+# The Rust counterpart of `clang -Weverything -Werror` plus clang-tidy's
+# bugprone-*, cert-*, cppcoreguidelines-*, hicpp-* and clang-analyzer-*.
+# Like Clang's -W flags these only warn, so `cargo build` keeps working; the
+# -Werror step is `cargo clippy --all-targets -- -D warnings`. Silence a single
+# site with `#[expect(clippy::lint, reason = "...")]`, the counterpart of
+# `// NOLINT(...)` with a justification. Thresholds live in clippy.toml.
+
+[workspace.lints.rust]
+# -Wunused -Wunused-macros -Wunused-template -Wunused-member-function
+unused = { level = "warn", priority = -1 }
+unused_crate_dependencies = "warn"
+unused_import_braces = "warn"
+unused_lifetimes = "warn"
+unused_macro_rules = "warn"
+unused_qualifications = "warn"
+redundant_lifetimes = "warn"
+single_use_lifetimes = "warn"
+unit_bindings = "warn"
+# -Wmissing-prototypes -Wmissing-variable-declarations: no accidental exports
+unreachable_pub = "warn"
+# -Wcast-qual -Wuseless-cast
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+# -Wdeprecated -Wfuture-compat
+rust_2018_idioms = { level = "warn", priority = -1 }
+rust_2024_compatibility = { level = "warn", priority = -1 }
+keyword_idents = { level = "warn", priority = -1 }
+elided_lifetimes_in_paths = "warn"
+meta_variable_misuse = "warn"
+let_underscore_drop = "warn"
+# cppcoreguidelines-pro-type-* / cert-exp*: every unsafe op is explicit
+unsafe_op_in_unsafe_fn = "warn"
+missing_unsafe_on_extern = "warn"
+unsafe_attr_outside_unsafe = "warn"
+# cert-err58-cpp / bugprone-exception-escape: no unwinding across the C ABI
+ffi_unwind_calls = "warn"
+# -Wbidi-chars -Wunicode-homoglyph (Trojan Source, CVE-2021-42574)
+non_ascii_idents = "warn"
+text_direction_codepoint_in_comment = "forbid"
+text_direction_codepoint_in_literal = "forbid"
+
+[workspace.lints.clippy]
+# -Weverything: every non-restriction group
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+# private, path-only workspace: no crates.io metadata, and vendored deps pin
+# their own versions
+cargo_common_metadata = "allow"
+multiple_crate_versions = "allow"
+# house style (report 1000, pass 2): explicit `match`, no `let ... else`, no
+# `map_or(|..| ..)` closures
+manual_let_else = "allow"
+option_if_let_else = "allow"
+# contradicts rustc's unreachable_pub, which wants `pub(crate)` in a binary
+redundant_pub_crate = "allow"
+
+# --- restriction picks ---
+# clang-analyzer-core.NullDereference / bugprone-unchecked-optional-access
+unwrap_used = "warn"
+expect_used = "warn"
+unwrap_in_result = "warn"
+panic_in_result_fn = "warn"
+get_unwrap = "warn"
+# -Warray-bounds -fsanitize=bounds / cppcoreguidelines-pro-bounds-*
+indexing_slicing = "warn"
+string_slice = "warn"
+# cppcoreguidelines-pro-type-cstyle-cast / -Wold-style-cast
+as_conversions = "warn"
+as_underscore = "warn"
+as_pointer_underscore = "warn"
+fn_to_numeric_cast_any = "warn"
+ptr_cast_constness = "warn"
+# -Wfloat-equal
+float_cmp_const = "warn"
+lossy_float_literal = "warn"
+# -Wshadow-all
+shadow_reuse = "warn"
+shadow_same = "warn"
+shadow_unrelated = "warn"
+# -Wswitch-enum / bugprone-switch-missing-default-case
+wildcard_enum_match_arm = "warn"
+# cert-int33-c / cert-int10-c: truncating division, sign of negative remainders
+integer_division = "warn"
+modulo_arithmetic = "warn"
+# -Wparentheses on bit ops / -Wshift-op-parentheses
+precedence_bits = "warn"
+# cert-exp* / hicpp-no-assembler: every unsafe block justified, one op each
+undocumented_unsafe_blocks = "warn"
+multiple_unsafe_ops_per_block = "warn"
+unnecessary_safety_comment = "warn"
+unnecessary_safety_doc = "warn"
+# cert-mem31-c / clang-analyzer-unix.Malloc (leaks)
+mem_forget = "warn"
+# cert-err33-c / bugprone-unused-return-value
+let_underscore_must_use = "warn"
+let_underscore_untyped = "warn"
+# cert-err50-cpp / cert-env32-c: no abrupt termination
+panic = "warn"
+exit = "warn"
+# leftover debugging / unfinished code (-W#warnings)
+dbg_macro = "warn"
+todo = "warn"
+unimplemented = "warn"
+unreachable = "warn"
+# NOLINT without a justification
+allow_attributes = "warn"
+allow_attributes_without_reason = "warn"
+# no Clang counterpart: diagnostics go through `log`, assertions say why
+print_stdout = "warn"
+print_stderr = "warn"
+missing_assert_message = "warn"
+
 [profile.dev]
 panic = "abort"
 
 [profile.release]
 panic = "abort"
+# integer overflow aborts instead of wrapping, like dev builds already do
+# (the runtime counterpart of clang's -ftrapv)
+overflow-checks = true
 
 [patch.crates-io]
 # === === ===
