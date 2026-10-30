@@ -6,3 +6,6 @@ license-file.workspace = true
 
 [dependencies]
 corela_gfx_impl.workspace = true
+
+[lints]
+workspace = true

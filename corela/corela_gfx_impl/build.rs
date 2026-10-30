@@ -12,9 +12,9 @@ const GLIB_PREFIX: &str = "/opt/glib-2.90.1";
 const GLIB_LIB_NAME: &str = "glib-2.0";
 /// Pins the GLib API surface the C sources may use.
 const GLIB_VERSION: &str = "GLIB_VERSION_2_90";
-/// Tag for g_critical() and friends.
+/// Tag for `g_critical()` and friends.
 const G_LOG_DOMAIN: &str = "\"corela\"";
-/// X11 windowing, OpenGL, and the C runtime pieces sokol_app needs on Linux.
+/// X11 windowing, OpenGL, and the C runtime pieces `sokol_app` needs on Linux.
 const SYSTEM_LIBS: [&str; 8] = ["X11", "Xi", "Xcursor", "GL", "dl", "pthread", "m", "c"];
 
 fn main() {

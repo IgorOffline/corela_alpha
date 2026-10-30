@@ -1,0 +1,29 @@
+# Thresholds for the lints enabled in Cargo.toml's [workspace.lints.clippy].
+
+# lints also apply to items reachable only inside the workspace
+avoid-breaking-exported-api = false
+check-private-items = true
+# proper names that doc_markdown would otherwise want in backticks;
+# ".." keeps clippy's defaults (OpenGL, ...)
+doc-valid-idents = ["GLib", ".."]
+
+# readability-function-cognitive-complexity (clang-tidy default 25)
+cognitive-complexity-threshold = 25
+# readability-function-size: LineThreshold
+too-many-lines-threshold = 80
+# readability-function-size: ParameterThreshold
+too-many-arguments-threshold = 7
+# -Wframe-larger-than=16384
+stack-size-threshold = 16384
+# -Wlarger-than / -Wvla-larger-than
+array-size-threshold = 16384
+# readability-function-size: NestingThreshold (impl + fn already use two levels)
+excessive-nesting-threshold = 5
+
+# tests may abort, index and print freely (gtest's ASSERT_* equivalent)
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true
+allow-indexing-slicing-in-tests = true
+allow-dbg-in-tests = true
+allow-print-in-tests = true

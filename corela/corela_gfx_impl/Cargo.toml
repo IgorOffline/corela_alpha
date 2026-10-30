@@ -8,3 +8,6 @@ links = "corela_sokol"
 
 [build-dependencies]
 cc.workspace = true
+
+[lints]
+workspace = true

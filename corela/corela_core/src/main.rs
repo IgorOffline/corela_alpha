@@ -3,6 +3,7 @@ mod model;
 
 use std::ffi::CStr;
 use std::path::{Path, PathBuf};
+use std::process::ExitCode;
 
 use corela_gfx::{App, Frame, HexLayout, Window};
 
@@ -48,8 +49,15 @@ fn belongs(path: &Path) -> bool {
 }
 
 /// Looks for the config file in the executable's directory and its parents.
-fn find_regina() -> PathBuf {
-    let exe = std::env::current_exe().expect("cannot locate the corela executable");
+///
+/// # Errors
+/// If the executable's path is unknown, or no matching config is found
+/// within `CONFIG_SEARCH_DEPTH` directories.
+fn find_regina() -> Result<PathBuf, String> {
+    let exe = match std::env::current_exe() {
+        Ok(exe) => exe,
+        Err(error) => return Err(format!("cannot locate the corela executable: {error}")),
+    };
     let mut directory = exe.parent();
     for _ in 0..CONFIG_SEARCH_DEPTH {
         let current = match directory {
@@ -58,18 +66,17 @@ fn find_regina() -> PathBuf {
         };
         let candidate = current.join(CONFIG_FILE_NAME);
         if belongs(&candidate) {
-            return candidate;
+            return Ok(candidate);
         }
         directory = current.parent();
     }
-    log::error!(
-        "corela: no {CONFIG_FILE_NAME} for {NAME} {VERSION} within {CONFIG_SEARCH_DEPTH} directories of {}",
+    Err(format!(
+        "no {CONFIG_FILE_NAME} for {NAME} {VERSION} within {CONFIG_SEARCH_DEPTH} directories of {}",
         exe.display()
-    );
-    std::process::exit(1)
+    ))
 }
 
-fn move_event(direction: (i32, i32)) -> Event {
+const fn move_event(direction: (i32, i32)) -> Event {
     let (dq, dr) = direction;
     Event::Move { dq, dr }
 }
@@ -83,7 +90,7 @@ struct Corela {
 }
 
 impl Corela {
-    fn theme(&self) -> &Theme {
+    const fn theme(&self) -> &Theme {
         if self.dark {
             &self.config.dark_theme
         } else {
@@ -107,7 +114,11 @@ impl App for Corela {
         let cells = self.gfx.cells();
         for (index, cell) in cells.iter().enumerate() {
             let (q, r) = *cell;
-            let label = index as i32;
+            // labels are numbered in cells() order; a radius-4 board has 61
+            let label = match i32::try_from(index) {
+                Ok(label) => label,
+                Err(_) => break,
+            };
             let at = self.layout.to_pixel(q, r);
             let active = (q, r) == selected;
             let color = if active {
@@ -199,13 +210,28 @@ impl App for Corela {
     }
 }
 
-fn main() {
+fn main() -> ExitCode {
     // RUST_LOG overrides the default level
     let log_settings = env_logger::Env::default().default_filter_or(DEFAULT_LOG_LEVEL);
     env_logger::Builder::from_env(log_settings).init();
 
-    let path = find_regina();
-    let config = load_config(&path);
+    match start() {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(error) => {
+            log::error!("corela: {error}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+/// Finds and loads the config, then runs the app until its window closes.
+///
+/// # Errors
+/// The first error from `find_regina` or `load_config`; nothing has been
+/// shown on screen yet when it returns one.
+fn start() -> Result<(), String> {
+    let path = find_regina()?;
+    let config = load_config(&path)?;
     log::info!("{} v{}", config.name, config.version);
     log::debug!("Configuration: {}", path.display());
 
@@ -218,8 +244,8 @@ fn main() {
     let geometry = corela_gfx::geometry();
     let layout = HexLayout {
         origin: (
-            config.window_width as f32 / 2.0,
-            config.window_height as f32 / 2.0,
+            corela_gfx::small_to_f32(config.window_width) / 2.0,
+            corela_gfx::small_to_f32(config.window_height) / 2.0,
         ),
         size: geometry.hex_size,
     };
@@ -232,4 +258,5 @@ fn main() {
         dark: true,
     };
     corela_gfx::run(&window, Box::new(app));
+    Ok(())
 }
