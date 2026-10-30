@@ -78,10 +78,51 @@ impl Gfx {
     }
 
     pub(crate) fn node_at(&self, cell: (i32, i32)) -> Option<Node> {
-        self.nodes
-            .iter()
-            .find(|placed| placed.is_at(self.region, cell))
-            .map(|placed| placed.node)
+        for placed in &self.nodes {
+            if placed.is_at(self.region, cell) {
+                return Some(placed.node);
+            }
+        }
+        None
+    }
+
+    /// Whether the start node is placed, in any region.
+    fn has_start_node(&self) -> bool {
+        for placed in &self.nodes {
+            if placed.node == Node::BpmnStartNote {
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Turns the arrow on the selected cell one step clockwise, or places a
+    /// new arrow there if the cell is empty. A start node is left alone.
+    fn place_arrow(&mut self) {
+        for placed in &mut self.nodes {
+            if placed.is_at(self.region, self.selected) {
+                if let Node::Arrow(direction) = &mut placed.node {
+                    *direction = (*direction + 1) % 8;
+                }
+                return;
+            }
+        }
+        self.nodes.push(PlacedNode {
+            region: self.region,
+            cell: self.selected,
+            node: Node::Arrow(0),
+        });
+    }
+
+    /// Removes the node on the selected cell, if there is one.
+    fn remove_selected(&mut self) {
+        let mut kept = Vec::new();
+        for placed in &self.nodes {
+            if !placed.is_at(self.region, self.selected) {
+                kept.push(*placed);
+            }
+        }
+        self.nodes = kept;
     }
 
     pub(crate) fn in_bounds(&self, cell: (i32, i32)) -> bool {
@@ -126,12 +167,7 @@ impl Gfx {
                 Flow::Continue
             }
             Event::PlaceStart => {
-                if self.node_at(self.selected).is_none()
-                    && !self
-                        .nodes
-                        .iter()
-                        .any(|placed| placed.node == Node::BpmnStartNote)
-                {
+                if self.node_at(self.selected).is_none() && !self.has_start_node() {
                     self.nodes.push(PlacedNode {
                         region: self.region,
                         cell: self.selected,
@@ -141,26 +177,11 @@ impl Gfx {
                 Flow::Continue
             }
             Event::PlaceArrow => {
-                if let Some(placed) = self
-                    .nodes
-                    .iter_mut()
-                    .find(|placed| placed.is_at(self.region, self.selected))
-                {
-                    if let Node::Arrow(direction) = &mut placed.node {
-                        *direction = (*direction + 1) % 8;
-                    }
-                } else {
-                    self.nodes.push(PlacedNode {
-                        region: self.region,
-                        cell: self.selected,
-                        node: Node::Arrow(0),
-                    });
-                }
+                self.place_arrow();
                 Flow::Continue
             }
             Event::Remove => {
-                self.nodes
-                    .retain(|placed| !placed.is_at(self.region, self.selected));
+                self.remove_selected();
                 Flow::Continue
             }
             Event::Quit => {
@@ -173,7 +194,7 @@ impl Gfx {
 
 #[expect(
     clippy::struct_field_names,
-    reason = "the suffix matches every other *_color name (report 1000)"
+    reason = "the suffix matches every other *_color name"
 )]
 pub(crate) struct Theme {
     pub(crate) base_color: u32,
