@@ -1,22 +1,9 @@
-use corela_gfx::Icon;
+mod config;
+mod edits;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Event {
-    Move { dq: i32, dr: i32 },
-    PlaceStart,
-    PlaceArrow,
-    Remove,
-    Quit,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Flow {
-    Continue,
-    Quit,
-}
+pub(crate) use config::{Config, Theme};
 
 const CENTER_CELL: (i32, i32) = (0, 0);
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Region {
     Center,
@@ -30,6 +17,14 @@ impl Region {
             Self::North => c"North",
         }
     }
+
+    /// `name` as a Rust string, for logs and the replay file.
+    pub(crate) const fn text(self) -> &'static str {
+        match self {
+            Self::Center => "Center",
+            Self::North => "North",
+        }
+    }
 }
 
 /// A project may contain only one start node across all regions.
@@ -39,35 +34,73 @@ pub(crate) enum Node {
     Arrow(u8),
 }
 
-#[derive(Clone, Copy, Debug)]
-struct PlacedNode {
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct PlacedNode {
     region: Region,
     cell: (i32, i32),
     node: Node,
 }
 
 impl PlacedNode {
+    pub(crate) const fn region(&self) -> Region {
+        self.region
+    }
+
+    pub(crate) const fn cell(&self) -> (i32, i32) {
+        self.cell
+    }
+
+    pub(crate) const fn node(&self) -> Node {
+        self.node
+    }
+
     fn is_at(&self, region: Region, cell: (i32, i32)) -> bool {
         self.region == region && self.cell == cell
     }
 }
 
-pub(crate) struct Gfx {
-    region: Region,
+/// A change the user can make to a board.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Edit {
+    Move { dq: i32, dr: i32 },
+    PlaceStart,
+    PlaceArrow,
+    Remove,
+}
+
+/// What `Board::apply` returns: the new board, and a note for the log
+/// saying what happened. When nothing could be done, `board` equals the
+/// board `apply` was called on.
+pub(crate) struct Outcome {
+    pub(crate) board: Board,
+    pub(crate) note: String,
+}
+
+/// Everything on screen that undo and redo bring back.
+///
+/// A `Board` never changes after it is made: it has no `&mut self` method.
+/// `apply` makes a new board instead, so an old board stays exactly as it
+/// was, and undo is just "show the previous board again" (see `History`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct Board {
     radius: i32,
+    region: Region,
     selected: (i32, i32),
     nodes: Vec<PlacedNode>,
 }
 
-impl Gfx {
+impl Board {
+    /// An empty board with the center cell selected.
     pub(crate) const fn new(radius: i32) -> Self {
         Self {
-            region: Region::Center,
             radius,
+            region: Region::Center,
             selected: CENTER_CELL,
             nodes: Vec::new(),
         }
     }
+
+    // --- queries: read the board, never change it ---
 
     pub(crate) const fn region(&self) -> Region {
         self.region
@@ -77,6 +110,12 @@ impl Gfx {
         self.selected
     }
 
+    /// The nodes of every region, in the order they were placed.
+    pub(crate) fn nodes(&self) -> &[PlacedNode] {
+        &self.nodes
+    }
+
+    /// The node on `cell` of the current region.
     pub(crate) fn node_at(&self, cell: (i32, i32)) -> Option<Node> {
         for placed in &self.nodes {
             if placed.is_at(self.region, cell) {
@@ -96,35 +135,6 @@ impl Gfx {
         false
     }
 
-    /// Turns the arrow on the selected cell one step clockwise, or places a
-    /// new arrow there if the cell is empty. A start node is left alone.
-    fn place_arrow(&mut self) {
-        for placed in &mut self.nodes {
-            if placed.is_at(self.region, self.selected) {
-                if let Node::Arrow(direction) = &mut placed.node {
-                    *direction = (*direction + 1) % 8;
-                }
-                return;
-            }
-        }
-        self.nodes.push(PlacedNode {
-            region: self.region,
-            cell: self.selected,
-            node: Node::Arrow(0),
-        });
-    }
-
-    /// Removes the node on the selected cell, if there is one.
-    fn remove_selected(&mut self) {
-        let mut kept = Vec::new();
-        for placed in &self.nodes {
-            if !placed.is_at(self.region, self.selected) {
-                kept.push(*placed);
-            }
-        }
-        self.nodes = kept;
-    }
-
     pub(crate) fn in_bounds(&self, cell: (i32, i32)) -> bool {
         let (q, r) = cell;
         q.abs().max(r.abs()).max((q + r).abs()) <= self.radius
@@ -142,87 +152,4 @@ impl Gfx {
         }
         cells
     }
-
-    pub(crate) fn handle(&mut self, event: Event) -> Flow {
-        match event {
-            Event::Move { dq, dr } => {
-                if self.region == Region::Center && self.selected == (0, -4) && (dq, dr) == (0, -1)
-                {
-                    self.region = Region::North;
-                    self.selected = (0, 4);
-                    log::info!("core: entered North region");
-                    return Flow::Continue;
-                }
-                if self.region == Region::North && self.selected == (0, 4) && (dq, dr) == (0, 1) {
-                    self.region = Region::Center;
-                    self.selected = (0, -4);
-                    log::info!("core: entered Center region");
-                    return Flow::Continue;
-                }
-                let cell = (self.selected.0 + dq, self.selected.1 + dr);
-                if self.in_bounds(cell) {
-                    self.selected = cell;
-                    log::info!("core: selected ({}, {})", cell.0, cell.1);
-                }
-                Flow::Continue
-            }
-            Event::PlaceStart => {
-                if self.node_at(self.selected).is_none() && !self.has_start_node() {
-                    self.nodes.push(PlacedNode {
-                        region: self.region,
-                        cell: self.selected,
-                        node: Node::BpmnStartNote,
-                    });
-                }
-                Flow::Continue
-            }
-            Event::PlaceArrow => {
-                self.place_arrow();
-                Flow::Continue
-            }
-            Event::Remove => {
-                self.remove_selected();
-                Flow::Continue
-            }
-            Event::Quit => {
-                log::info!("core: quit");
-                Flow::Quit
-            }
-        }
-    }
-}
-
-#[expect(
-    clippy::struct_field_names,
-    reason = "the suffix matches every other *_color name"
-)]
-pub(crate) struct Theme {
-    pub(crate) base_color: u32,
-    pub(crate) tile_color: u32,
-    pub(crate) selected_color: u32,
-    pub(crate) cell_marker_border_color: u32,
-    pub(crate) cell_marker_fill_color: u32,
-    pub(crate) chevron_color: u32,
-    pub(crate) label_text_color: u32,
-}
-
-pub(crate) struct Config {
-    pub(crate) name: String,
-    pub(crate) version: String,
-    pub(crate) key_start: i32,
-    pub(crate) key_arrow: i32,
-    pub(crate) key_remove: i32,
-    pub(crate) key_escape: i32,
-    pub(crate) key_north_west: i32,
-    pub(crate) key_north: i32,
-    pub(crate) key_north_east: i32,
-    pub(crate) key_south_west: i32,
-    pub(crate) key_south: i32,
-    pub(crate) key_south_east: i32,
-    pub(crate) window_width: i32,
-    pub(crate) window_height: i32,
-    pub(crate) key_theme: i32,
-    pub(crate) dark_theme: Theme,
-    pub(crate) light_theme: Theme,
-    pub(crate) chevron_icon: Icon,
 }

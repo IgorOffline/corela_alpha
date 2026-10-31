@@ -1,18 +1,22 @@
 mod config;
+mod history;
 mod model;
+mod replay;
 
-use std::ffi::CStr;
+use std::ffi::{CStr, CString};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use corela_gfx::{App, Frame, HexLayout, Window};
 
 use crate::config::{CONFIG_FILE_NAME, KEY_NAME, KEY_VERSION, SECTION_META, load_config};
-use model::{Config, Event, Flow, Gfx, Node, Theme};
+use history::{Command, History};
+use model::{Board, Config, Edit, Node, Theme};
+use replay::Replay;
 
 const NAME: &str = env!("CARGO_BIN_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-const WINDOW_TITLE: &CStr = c"corela";
+const WINDOW_TITLE: &CStr = c"corela_bpmn";
 const DEFAULT_LOG_LEVEL: &str = "info";
 /// How many parent directories of the executable are searched for the config.
 const CONFIG_SEARCH_DEPTH: usize = 3;
@@ -76,26 +80,130 @@ fn find_regina() -> Result<PathBuf, String> {
     ))
 }
 
-const fn move_event(direction: (i32, i32)) -> Event {
+const fn move_command(direction: (i32, i32)) -> Command {
     let (dq, dr) = direction;
-    Event::Move { dq, dr }
+    Command::Edit(Edit::Move { dq, dr })
 }
 
+/// What the run key does; the cycle key steps through these in order.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum InputMode {
+    None,
+    Place,
+    Undo,
+    Redo,
+}
+
+impl InputMode {
+    const fn next(self) -> Self {
+        match self {
+            Self::None => Self::Place,
+            Self::Place => Self::Undo,
+            Self::Undo => Self::Redo,
+            Self::Redo => Self::None,
+        }
+    }
+
+    const fn name(self) -> &'static str {
+        match self {
+            Self::None => "none",
+            Self::Place => "place",
+            Self::Undo => "undo",
+            Self::Redo => "redo",
+        }
+    }
+
+    const fn command(self) -> Option<Command> {
+        match self {
+            Self::None => None,
+            Self::Place => Some(Command::Edit(Edit::PlaceStart)),
+            Self::Undo => Some(Command::Undo),
+            Self::Redo => Some(Command::Redo),
+        }
+    }
+}
+
+/// The app. `config`, `layout` and `geometry` never change; `history`
+/// changes only through commands (see history.rs), `replay` only grows, and
+/// `dark` is a view setting that undo does not touch.
 struct Corela {
     config: Config,
-    gfx: Gfx,
+    history: History,
+    replay: Replay,
     layout: HexLayout,
     geometry: corela_gfx::Geometry,
     dark: bool,
+    mode: InputMode,
 }
 
 impl Corela {
+    /// Whether `command` would do something right now.
+    fn is_legal(&self, command: Command) -> bool {
+        match command {
+            Command::Undo => self.history.undo_count() > 0,
+            Command::Redo => self.history.redo_count() > 0,
+            Command::Edit(edit) => {
+                let board = self.history.board();
+                board.apply(edit).board != *board
+            }
+        }
+    }
+
     const fn theme(&self) -> &Theme {
         if self.dark {
             &self.config.dark_theme
         } else {
             &self.config.light_theme
         }
+    }
+
+    /// `core: action 3/24: <text>`, the prefix every gameplay log line has.
+    fn log_action(&self, text: &str) {
+        log::info!(
+            "core: action {}/{}: {text}",
+            self.replay.current_action(),
+            self.replay.last_action()
+        );
+    }
+
+    /// The command bound to `key_code`, if any.
+    const fn command_for(&self, key_code: i32) -> Option<Command> {
+        let config = &self.config;
+        if key_code == config.key_start {
+            Some(Command::Edit(Edit::PlaceStart))
+        } else if key_code == config.key_arrow {
+            Some(Command::Edit(Edit::PlaceArrow))
+        } else if key_code == config.key_remove {
+            Some(Command::Edit(Edit::Remove))
+        } else if key_code == config.key_north {
+            Some(move_command(NORTH))
+        } else if key_code == config.key_south {
+            Some(move_command(SOUTH))
+        } else if key_code == config.key_north_east {
+            Some(move_command(NORTH_EAST))
+        } else if key_code == config.key_south_east {
+            Some(move_command(SOUTH_EAST))
+        } else if key_code == config.key_north_west {
+            Some(move_command(NORTH_WEST))
+        } else if key_code == config.key_south_west {
+            Some(move_command(SOUTH_WEST))
+        } else {
+            None
+        }
+    }
+
+    /// Saves the replay after the last action, then quits.
+    fn finish(&self) {
+        let config = &self.config;
+        match self
+            .replay
+            .save(&config.replay_dir, &config.name, &config.version)
+        {
+            Ok(path) => self.log_action(&format!("saved replay {}", path.display())),
+            Err(error) => log::error!("core: replay not saved: {error}"),
+        }
+        self.log_action("quit");
+        corela_gfx::quit();
     }
 }
 
@@ -108,10 +216,20 @@ impl App for Corela {
         } else {
             &config.dark_theme
         };
+        let board = self.history.board();
         frame.clear(theme.base_color);
-        frame.footer(self.gfx.region().name(), theme.label_text_color);
-        let selected = self.gfx.selected();
-        let cells = self.gfx.cells();
+        frame.footer(board.region().name(), theme.label_text_color);
+        let counter_text = format!(
+            "Action {} / {}",
+            self.replay.current_action(),
+            self.replay.last_action()
+        );
+        // format! output never contains a NUL byte
+        if let Ok(counter) = CString::new(counter_text) {
+            frame.header(&counter, theme.label_text_color);
+        }
+        let selected = board.selected();
+        let cells = board.cells();
         for (index, cell) in cells.iter().enumerate() {
             let (q, r) = *cell;
             // labels are numbered in cells() order; a radius-4 board has 61
@@ -129,7 +247,7 @@ impl App for Corela {
             let radius = self.layout.size - self.geometry.hex_tile_inset;
             frame.hexagon(at, radius, color);
             // the marker and its chevrons cover these cells' labels
-            if self.gfx.node_at((q, r)).is_none() {
+            if board.node_at((q, r)).is_none() {
                 let text_color = if active {
                     inverted_theme.label_text_color
                 } else {
@@ -141,7 +259,7 @@ impl App for Corela {
 
         for cell in cells {
             let at = self.layout.to_pixel(cell.0, cell.1);
-            match self.gfx.node_at(cell) {
+            match board.node_at(cell) {
                 Some(Node::BpmnStartNote) => {
                     frame.circle(
                         at,
@@ -175,37 +293,54 @@ impl App for Corela {
     }
 
     fn key_down(&mut self, key_code: i32) {
+        // the replay is saved and corela is quitting; ignore late keys
+        if self.replay.is_complete() {
+            return;
+        }
         let config = &self.config;
         if key_code == config.key_theme {
             self.dark = !self.dark;
-            log::info!("core: {} theme", if self.dark { "dark" } else { "light" });
+            self.log_action(if self.dark {
+                "dark theme"
+            } else {
+                "light theme"
+            });
             return;
         }
-        let event = if key_code == config.key_start {
-            Event::PlaceStart
-        } else if key_code == config.key_arrow {
-            Event::PlaceArrow
-        } else if key_code == config.key_remove {
-            Event::Remove
-        } else if key_code == config.key_north {
-            move_event(NORTH)
-        } else if key_code == config.key_south {
-            move_event(SOUTH)
-        } else if key_code == config.key_north_east {
-            move_event(NORTH_EAST)
-        } else if key_code == config.key_south_east {
-            move_event(SOUTH_EAST)
-        } else if key_code == config.key_north_west {
-            move_event(NORTH_WEST)
-        } else if key_code == config.key_south_west {
-            move_event(SOUTH_WEST)
-        } else if key_code == config.key_escape {
-            Event::Quit
-        } else {
-            return;
-        };
-        if self.gfx.handle(event) == Flow::Quit {
+        if key_code == config.key_escape {
+            self.log_action("quit");
             corela_gfx::quit();
+            return;
+        }
+        if key_code == config.key_cycle {
+            self.mode = self.mode.next();
+            self.log_action(&format!("input mode: {}", self.mode.name()));
+            return;
+        }
+        let command = if key_code == config.key_run {
+            match self.mode.command() {
+                Some(command) if self.is_legal(command) => command,
+                Some(_) => {
+                    self.log_action(&format!("{} is not legal now", self.mode.name()));
+                    return;
+                }
+                None => return,
+            }
+        } else {
+            match self.command_for(key_code) {
+                Some(command) => command,
+                None => return,
+            }
+        };
+        let note = self.history.execute(command);
+        self.log_action(&note);
+        // undo and redo move through history; they do not count as actions
+        if matches!(command, Command::Undo | Command::Redo) {
+            return;
+        }
+        self.replay.record(command, note, &self.history);
+        if self.replay.is_complete() {
+            self.finish();
         }
     }
 }
@@ -249,13 +384,16 @@ fn start() -> Result<(), String> {
         ),
         size: geometry.hex_size,
     };
-    let gfx = Gfx::new(geometry.hex_radius);
+    let history = History::new(Board::new(geometry.hex_radius));
+    let replay = Replay::new(config.last_action);
     let app = Corela {
         config,
-        gfx,
+        history,
+        replay,
         layout,
         geometry,
         dark: true,
+        mode: InputMode::None,
     };
     corela_gfx::run(&window, Box::new(app));
     Ok(())

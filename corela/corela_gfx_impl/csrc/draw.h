@@ -50,6 +50,7 @@ void gfx_set_clear(gfloat clear_r, gfloat clear_g, gfloat clear_b);
 void gfx_draw_label(gint32 index, gfloat x, gfloat y, guint32 background,
                     guint32 text, bool selected);
 void gfx_set_font(const guint8* data, gsize length);
+void gfx_draw_header(const gchar* text, guint32 color);
 void gfx_draw_footer(const gchar* text, guint32 color);
 void gfx_draw_circle(gfloat x, gfloat y, gfloat radius, guint32 color);
 void gfx_draw_icon(const gfx_icon* icon, gfloat x, gfloat y, gfloat dx,
