@@ -27,6 +27,7 @@ fn main() {
         .define("_POSIX_C_SOURCE", POSIX_C_SOURCE_VERSION)
         .file(format!("{C_SOURCE_DIR}/sokol.c"))
         .file(format!("{C_SOURCE_DIR}/draw.c"))
+        .file(format!("{C_SOURCE_DIR}/draw_vector.c"))
         .file(format!("{NANOVG_DIR}/nanovg.c"))
         .include(SOKOL_DIR)
         .include(NANOVG_DIR)

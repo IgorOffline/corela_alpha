@@ -37,6 +37,7 @@ unsafe extern "C" {
     fn gfx_set_clear(clear_r: f32, clear_g: f32, clear_b: f32);
     fn gfx_draw_label(index: i32, x: f32, y: f32, background: u32, text: u32, selected: bool);
     fn gfx_set_font(data: *const u8, length: usize);
+    fn gfx_draw_header(text: *const c_char, color: u32);
     fn gfx_draw_footer(text: *const c_char, color: u32);
     fn gfx_draw_circle(x: f32, y: f32, radius: f32, color: u32);
     fn gfx_draw_icon(
@@ -119,6 +120,13 @@ impl Frame {
         let (x, y) = center;
         // SAFETY: a frame is open (see Frame); draw.c ignores unknown indices.
         unsafe { gfx_draw_label(index, x, y, background, text, selected) }
+    }
+
+    /// One line of text at the top left of the window.
+    pub fn header(&mut self, text: &CStr, color: u32) {
+        // SAFETY: a frame is open (see Frame); `text` is NUL-terminated and
+        // nanovg copies it before the call returns.
+        unsafe { gfx_draw_header(text.as_ptr(), color) }
     }
 
     pub fn footer(&mut self, text: &CStr, color: u32) {

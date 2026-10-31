@@ -8,6 +8,7 @@ pub(crate) const SECTION_META: &str = "meta";
 const SECTION_ASSET: &str = "asset";
 const SECTION_GFX: &str = "gfx";
 const SECTION_INPUT: &str = "input";
+const SECTION_REPLAY: &str = "replay";
 const SECTION_THEME_DARK: &str = "theme_dark";
 const SECTION_THEME_LIGHT: &str = "theme_light";
 const THEME_COLOR_SUFFIX: &str = "_color";
@@ -28,6 +29,10 @@ const MIN_WINDOW_SIDE: i32 = 1;
 const MAX_WINDOW_SIDE: i32 = 32767;
 /// Colors are packed as 0xRRGGBB.
 const MAX_COLOR: u32 = 0x00FF_FFFF;
+/// Replays are numbered `replay_1000.json` to `replay_9999.json`, and hold
+/// at most that many actions.
+const MIN_LAST_ACTION: i32 = 1;
+const MAX_LAST_ACTION: i32 = 9999;
 
 /// Reads typed values from a parsed config file. Anything missing, of the
 /// wrong type or out of range is an error naming the file, section and key.
@@ -158,16 +163,24 @@ impl ConfigReader {
         })
     }
 
+    /// The path in `[section] key`, relative to the config file.
+    ///
+    /// # Errors
+    /// If the key is missing or not a string.
+    fn path(&self, section: &str, key: &str) -> Result<PathBuf, String> {
+        let root = match self.path.parent() {
+            Some(root) => root,
+            None => return Err(format!("{CONFIG_FILE_NAME} has no parent directory")),
+        };
+        Ok(root.join(self.string(section, key)?))
+    }
+
     /// Loads the SVG named by `[asset] key`, relative to the config file.
     ///
     /// # Errors
     /// If the key is missing, or the SVG cannot be read or parsed.
     fn icon(&self, key: &str) -> Result<Icon, String> {
-        let root = match self.path.parent() {
-            Some(root) => root,
-            None => return Err(format!("{CONFIG_FILE_NAME} has no parent directory")),
-        };
-        let svg = root.join(self.string(SECTION_ASSET, key)?);
+        let svg = self.path(SECTION_ASSET, key)?;
         let text = match std::fs::read_to_string(&svg) {
             Ok(text) => text,
             Err(error) => return Err(format!("{}: {error}", svg.display())),
@@ -193,6 +206,8 @@ pub(crate) fn load_config(path: &Path) -> Result<Config, String> {
         key_start: reader.key_code("input_key_start")?,
         key_arrow: reader.key_code("input_key_arrow")?,
         key_remove: reader.key_code("input_key_remove")?,
+        key_cycle: reader.key_code("input_key_cycle")?,
+        key_run: reader.key_code("input_key_run")?,
         key_escape: reader.key_code("input_key_escape")?,
         key_north_west: reader.key_code("input_key_north_west")?,
         key_north: reader.key_code("input_key_north")?,
@@ -206,5 +221,12 @@ pub(crate) fn load_config(path: &Path) -> Result<Config, String> {
         dark_theme: reader.theme(SECTION_THEME_DARK)?,
         light_theme: reader.theme(SECTION_THEME_LIGHT)?,
         chevron_icon: reader.icon("icon_chevron")?,
+        replay_dir: reader.path(SECTION_REPLAY, "replay_dir")?,
+        last_action: reader.int_in(
+            SECTION_REPLAY,
+            "replay_last_action",
+            MIN_LAST_ACTION,
+            MAX_LAST_ACTION,
+        )?,
     })
 }
