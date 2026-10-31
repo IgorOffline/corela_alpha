@@ -1,5 +1,2 @@
 export XDOTOOL=/home/igor/dev/xdotool-4.20260303.1/xdotool.static
-// old 1 ... cargo test --test gui_keyboard -- --ignored
-// old 2 ... cargo test -- --ignored
-// old 3 ... cargo test --test svg_assets
-cargo test
+cargo run
