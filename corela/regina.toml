@@ -1,0 +1,92 @@
+[meta]
+name = "corela_bpmn"
+version = "0.1.0"
+
+[asset]
+icon_chevron = "corela_gfx/asset/remixicon/arrow-right-double-line/36.png"
+
+[replay]
+replay_dir = "corela_replay"
+replay_last_action = 24
+
+[gfx]
+window_width = 1152
+window_height = 648
+
+# Catppuccin Mocha
+[theme_dark_color]
+base_name = "base"
+base_value = 0x1E1E2E
+surface_0_name = "surface_0"
+surface_0_value = 0x313244
+text_name = "text"
+text_value = 0xCDD6F4
+crust_name = "crust"
+crust_value = 0x11111B
+yellow_name = "yellow"
+yellow_value = 0xF9E2AF
+peach_name = "peach"
+peach_value = 0xFAB387
+maroon_name = "maroon"
+maroon_value = 0xEBA0AC
+red_name = "red"
+red_value = 0xF38BA8
+
+# Text and icons on the peach selection use base, as Catppuccin's style
+# guide does for content on an accent color.
+[theme_dark_role]
+color_base = "base"
+color_tile = "surface_0"
+color_selected = "peach"
+color_selected_label_text = "base"
+color_chevron = "maroon"
+color_selected_chevron = "base"
+color_cell_marker_border = "red"
+color_cell_marker_fill = "text"
+color_label_text = "text"
+
+# Catppuccin Frappé
+[theme_light_color]
+base_name = "base"
+base_value = 0x303446
+surface_0_name = "surface_0"
+surface_0_value = 0x414559
+text_name = "text"
+text_value = 0xC6D0F5
+crust_name = "crust"
+crust_value = 0x232634
+yellow_name = "yellow"
+yellow_value = 0xE5C890
+peach_name = "peach"
+peach_value = 0xEF9F76
+maroon_name = "maroon"
+maroon_value = 0xEA999C
+red_name = "red"
+red_value = 0xE78284
+
+[theme_light_role]
+color_base = "base"
+color_tile = "surface_0"
+color_selected = "peach"
+color_selected_label_text = "base"
+color_chevron = "maroon"
+color_selected_chevron = "base"
+color_cell_marker_border = "red"
+color_cell_marker_fill = "text"
+color_label_text = "text"
+
+# Key names are miniquad's KeyCode variants (Key0..Key9, A..Z, Escape, ...).
+[input]
+input_key_escape = "Escape"
+input_key_start = "Key0" # top-row 0
+input_key_arrow = "Key1" # top-row 1
+input_key_remove = "X"
+input_key_cycle = "I"
+input_key_run = "R"
+input_key_north_west = "Q"
+input_key_north = "W"
+input_key_north_east = "E"
+input_key_south_west = "A"
+input_key_south = "S"
+input_key_south_east = "D"
+input_key_theme = "M"
