@@ -1,5 +1,2 @@
-Cargo.lock
-Cargo.toml
-clippy.toml
-README.md
-rust-toolchain.toml
+.idea
+target
