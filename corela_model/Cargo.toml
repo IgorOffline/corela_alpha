@@ -1,0 +1,8 @@
+[package]
+name = "corela_model"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[lints]
+workspace = true
