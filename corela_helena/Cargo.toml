@@ -1,0 +1,11 @@
+[package]
+name = "corela_helena"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[dependencies]
+corela_model.workspace = true
+
+[lints]
+workspace = true
