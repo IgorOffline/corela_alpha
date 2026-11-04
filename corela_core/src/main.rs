@@ -3,10 +3,13 @@ mod dto;
 
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::time::Instant;
 
 use corela_gfx::{App, Frame, HexLayout, Key, Window};
 use corela_helena::History;
-use corela_historia::Replay;
+use corela_historia::load::{find_latest_replay, load_replay};
+use corela_historia::save::save_replay;
+use corela_historia::{PlaybackTimer, Replay};
 use corela_model::entity::{Board, Node};
 use corela_model::message::{Command, Edit};
 
@@ -78,36 +81,44 @@ const fn move_command(direction: (i32, i32)) -> Command {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum InputMode {
     None,
-    Place,
+    Input,
     Undo,
     Redo,
+    Save,
+    Load,
 }
 
 impl InputMode {
     const fn next(self) -> Self {
         match self {
-            Self::None => Self::Place,
-            Self::Place => Self::Undo,
+            Self::None => Self::Input,
+            Self::Input => Self::Undo,
             Self::Undo => Self::Redo,
-            Self::Redo => Self::None,
+            Self::Redo => Self::Save,
+            Self::Save => Self::Load,
+            Self::Load => Self::None,
         }
     }
 
     const fn name(self) -> &'static str {
         match self {
-            Self::None => "none",
-            Self::Place => "place",
-            Self::Undo => "undo",
-            Self::Redo => "redo",
+            Self::None => "None",
+            Self::Input => "Input",
+            Self::Undo => "Undo",
+            Self::Redo => "Redo",
+            Self::Save => "Save",
+            Self::Load => "Load",
         }
     }
 
-    const fn command(self) -> Option<Command> {
+    const fn code(self) -> &'static str {
         match self {
-            Self::None => None,
-            Self::Place => Some(Command::Edit(Edit::PlaceStart)),
-            Self::Undo => Some(Command::Undo),
-            Self::Redo => Some(Command::Redo),
+            Self::None => "none",
+            Self::Input => "input",
+            Self::Undo => "undo",
+            Self::Redo => "redo",
+            Self::Save => "save",
+            Self::Load => "load",
         }
     }
 }
@@ -116,6 +127,7 @@ struct Corela {
     config: Config,
     history: History,
     replay: Replay,
+    playback_timer: Option<PlaybackTimer>,
     layout: HexLayout,
     geometry: corela_gfx::Geometry,
     dark: bool,
@@ -129,6 +141,14 @@ impl Corela {
         } else {
             &self.config.light_theme
         }
+    }
+
+    fn log_warning(&self, text: &str) {
+        log::warn!(
+            "core: action_{}_of_{}: {text}",
+            self.replay.current_action(),
+            self.replay.last_action()
+        );
     }
 
     fn log_action(&self, text: &str) {
@@ -164,15 +184,118 @@ impl Corela {
         }
     }
 
-    fn finish(&self) {
+    fn run_mode(&mut self) {
+        match self.mode {
+            InputMode::None | InputMode::Input => {}
+            InputMode::Undo => self.run_command(Command::Undo),
+            InputMode::Redo => self.run_command(Command::Redo),
+            InputMode::Save => self.save_if_any_action(),
+            InputMode::Load => self.start_playback(),
+        }
+    }
+
+    fn run_command(&mut self, command: Command) {
+        let note = match self.history.execute(command) {
+            Ok(note) => note,
+            Err(warning) => {
+                self.log_warning(&warning);
+                return;
+            }
+        };
+        self.replay
+            .record(command, note.clone(), self.history.snapshot());
+        self.log_action(&note);
+        if self.replay.is_complete() {
+            self.save();
+            self.quit();
+        }
+    }
+
+    fn save_if_any_action(&self) {
+        if self.replay.has_actions() {
+            self.save();
+        } else {
+            self.log_warning("nothing_to_save");
+        }
+    }
+
+    fn save(&self) {
         let config = &self.config;
-        match self
-            .replay
-            .save(&config.replay_dir, &config.name, &config.version)
-        {
+        match save_replay(
+            &self.replay,
+            &config.replay_dir,
+            &config.name,
+            &config.version,
+        ) {
             Ok(path) => self.log_action(&format!("saved_replay_{}", path.display())),
             Err(error) => log::error!("core: replay_not_saved: {error}"),
         }
+    }
+
+    fn start_playback(&mut self) {
+        let path = match find_latest_replay(&self.config.replay_dir) {
+            Ok(Some(path)) => path,
+            Ok(None) => {
+                self.log_action("no_replay_to_load");
+                self.quit();
+                return;
+            }
+            Err(error) => {
+                log::error!("core: replay_not_loaded: {error}");
+                self.quit();
+                return;
+            }
+        };
+        let empty_board = Board::new(self.geometry.hex_radius);
+        match load_replay(&path, &empty_board) {
+            Ok(replay) => {
+                self.replay = replay;
+                self.history = History::new(empty_board);
+                self.playback_timer = Some(PlaybackTimer::new(Instant::now()));
+                self.log_action(&format!("loaded_replay_{}", path.display()));
+            }
+            Err(error) => {
+                log::error!("core: replay_not_loaded: {error}");
+                self.quit();
+            }
+        }
+    }
+
+    fn play_due_action(&mut self) {
+        let timer = match &mut self.playback_timer {
+            Some(timer) => timer,
+            None => return,
+        };
+        if !timer.poll(Instant::now()) {
+            return;
+        }
+        if let Some(action) = self.replay.action_to_play() {
+            self.history = History::new(action.board().clone());
+            let note = action.note().to_owned();
+            self.replay.finish_playing_action();
+            self.log_action(&note);
+        } else {
+            self.log_action("replay_finished");
+            self.quit();
+        }
+    }
+
+    fn return_to_none_mode(&mut self) {
+        if self.playback_timer.is_some() {
+            self.stop_playback();
+        }
+        self.mode = InputMode::None;
+        self.log_action("input_mode_none");
+    }
+
+    fn stop_playback(&mut self) {
+        self.log_action("playback_stopped");
+        self.playback_timer = None;
+        self.replay = Replay::new(self.config.last_action);
+        self.history = History::new(Board::new(self.geometry.hex_radius));
+    }
+
+    fn quit(&self) {
         self.log_action("quit");
         corela_gfx::quit();
     }
@@ -180,11 +303,14 @@ impl Corela {
 
 impl App for Corela {
     fn frame(&mut self, frame: &mut Frame<'_>) {
+        self.play_due_action();
         let config = &self.config;
         let theme = self.theme();
         let board = self.history.board();
         frame.clear(theme.base_color);
         frame.footer(board.region().name(), theme.label_text_color);
+        let mode_label = format!("Mode: {}", self.mode.name());
+        frame.above_footer(&mode_label, theme.label_text_color);
         let counter = format!(
             "Action {} / {}",
             self.replay.current_action(),
@@ -248,6 +374,9 @@ impl App for Corela {
             return;
         }
         let config = &self.config;
+        if self.mode == InputMode::None && key != config.key_cycle {
+            return;
+        }
         if key == config.key_theme {
             self.dark = !self.dark;
             self.log_action(if self.dark {
@@ -258,35 +387,25 @@ impl App for Corela {
             return;
         }
         if key == config.key_escape {
-            self.log_action("quit");
-            corela_gfx::quit();
+            self.return_to_none_mode();
+            return;
+        }
+        if self.playback_timer.is_some() {
             return;
         }
         if key == config.key_cycle {
             self.mode = self.mode.next();
-            self.log_action(&format!("input_mode_{}", self.mode.name()));
+            self.log_action(&format!("input_mode_{}", self.mode.code()));
             return;
         }
-        let command = if key == config.key_run {
-            match self.mode.command() {
-                Some(command) if self.history.is_legal(command) => command,
-                Some(_) => {
-                    self.log_action(&format!("{}_is_not_legal_now", self.mode.name()));
-                    return;
-                }
-                None => return,
-            }
-        } else {
-            match self.command_for(key) {
-                Some(command) => command,
-                None => return,
-            }
-        };
-        let note = self.history.execute(command);
-        self.log_action(&note);
-        self.replay.record(command, note, self.history.snapshot());
-        if self.replay.is_complete() {
-            self.finish();
+        if key == config.key_run {
+            self.run_mode();
+            return;
+        }
+        if self.mode == InputMode::Input
+            && let Some(command) = self.command_for(key)
+        {
+            self.run_command(command);
         }
     }
 }
@@ -329,6 +448,7 @@ fn start() -> Result<(), String> {
         config,
         history,
         replay,
+        playback_timer: None,
         layout,
         geometry,
         dark: true,

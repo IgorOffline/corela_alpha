@@ -54,6 +54,7 @@ const CIRCLE_SEGMENT_COUNT: u8 = 64;
 const UI_FONT_SIZE: u16 = 20;
 const LABEL_FONT_SIZE: u16 = 20;
 const TEXT_MARGIN: f32 = 16.0;
+const UI_LINE_GAP: f32 = 4.0;
 const LINE_METRICS_SAMPLE: &str = "Ag";
 const LABEL_SELECTED_OPACITY: f32 = 1.0;
 const LABEL_UNSELECTED_OPACITY: f32 = 0.16;
@@ -140,11 +141,21 @@ impl Frame<'_> {
     }
 
     pub fn footer(&mut self, text: &str, color: u32) {
+        let baseline = self.footer_baseline();
+        self.text(text, TEXT_MARGIN, baseline, UI_FONT_SIZE, rgb(color));
+    }
+
+    pub fn above_footer(&mut self, text: &str, color: u32) {
+        let line = self.measure(LINE_METRICS_SAMPLE, UI_FONT_SIZE);
+        let baseline = (self.footer_baseline() - line.height - UI_LINE_GAP).round();
+        self.text(text, TEXT_MARGIN, baseline, UI_FONT_SIZE, rgb(color));
+    }
+
+    fn footer_baseline(&self) -> f32 {
         let line = self.measure(LINE_METRICS_SAMPLE, UI_FONT_SIZE);
         let descent = line.height - line.offset_y;
         let bottom = macroquad::window::screen_height() - TEXT_MARGIN;
-        let baseline = (bottom - descent).round();
-        self.text(text, TEXT_MARGIN, baseline, UI_FONT_SIZE, rgb(color));
+        (bottom - descent).round()
     }
 
     pub fn icon(&mut self, icon: &Icon, center: Point, angle: f32, color: u32) {
