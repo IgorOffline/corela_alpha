@@ -1,17 +1,16 @@
 mod config;
-mod history;
 mod model;
-mod replay;
 
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
+use corela_common::{Board, Command, Edit, Node};
 use corela_gfx::{App, Frame, HexLayout, Key, Window};
+use corela_helena::History;
+use corela_historia::Replay;
 
 use crate::config::{CONFIG_FILE_NAME, KEY_NAME, KEY_VERSION, SECTION_META, load_config};
-use history::{Command, History};
-use model::{Board, Config, Edit, Node, Theme};
-use replay::Replay;
+use model::{Config, Theme};
 
 const NAME: &str = env!("CARGO_BIN_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -50,7 +49,7 @@ fn belongs(path: &Path) -> bool {
 fn find_regina() -> Result<PathBuf, String> {
     let exe = match std::env::current_exe() {
         Ok(exe) => exe,
-        Err(error) => return Err(format!("cannot locate the corela executable: {error}")),
+        Err(error) => return Err(format!("cannot_locate_the_corela_executable: {error}")),
     };
     let mut directory = exe.parent();
     for _ in 0..CONFIG_SEARCH_DEPTH {
@@ -65,7 +64,7 @@ fn find_regina() -> Result<PathBuf, String> {
         directory = current.parent();
     }
     Err(format!(
-        "no {CONFIG_FILE_NAME} for {NAME} {VERSION} within {CONFIG_SEARCH_DEPTH} directories of {}",
+        "no_{CONFIG_FILE_NAME}_for_{NAME}_{VERSION}_within_{CONFIG_SEARCH_DEPTH}_directories_of_{}",
         exe.display()
     ))
 }
@@ -123,17 +122,6 @@ struct Corela {
 }
 
 impl Corela {
-    fn is_legal(&self, command: Command) -> bool {
-        match command {
-            Command::Undo => self.history.undo_count() > 0,
-            Command::Redo => self.history.redo_count() > 0,
-            Command::Edit(edit) => {
-                let board = self.history.board();
-                board.apply(edit).board != *board
-            }
-        }
-    }
-
     const fn theme(&self) -> &Theme {
         if self.dark {
             &self.config.dark_theme
@@ -144,7 +132,7 @@ impl Corela {
 
     fn log_action(&self, text: &str) {
         log::info!(
-            "core: action {}/{}: {text}",
+            "core: action_{}_of_{}: {text}",
             self.replay.current_action(),
             self.replay.last_action()
         );
@@ -181,8 +169,8 @@ impl Corela {
             .replay
             .save(&config.replay_dir, &config.name, &config.version)
         {
-            Ok(path) => self.log_action(&format!("saved replay {}", path.display())),
-            Err(error) => log::error!("core: replay not saved: {error}"),
+            Ok(path) => self.log_action(&format!("saved_replay_{}", path.display())),
+            Err(error) => log::error!("core: replay_not_saved: {error}"),
         }
         self.log_action("quit");
         corela_gfx::quit();
@@ -262,9 +250,9 @@ impl App for Corela {
         if key == config.key_theme {
             self.dark = !self.dark;
             self.log_action(if self.dark {
-                "dark theme"
+                "dark_theme"
             } else {
-                "light theme"
+                "light_theme"
             });
             return;
         }
@@ -275,14 +263,14 @@ impl App for Corela {
         }
         if key == config.key_cycle {
             self.mode = self.mode.next();
-            self.log_action(&format!("input mode: {}", self.mode.name()));
+            self.log_action(&format!("input_mode_{}", self.mode.name()));
             return;
         }
         let command = if key == config.key_run {
             match self.mode.command() {
-                Some(command) if self.is_legal(command) => command,
+                Some(command) if self.history.is_legal(command) => command,
                 Some(_) => {
-                    self.log_action(&format!("{} is not legal now", self.mode.name()));
+                    self.log_action(&format!("{}_is_not_legal_now", self.mode.name()));
                     return;
                 }
                 None => return,
@@ -295,10 +283,7 @@ impl App for Corela {
         };
         let note = self.history.execute(command);
         self.log_action(&note);
-        if matches!(command, Command::Undo | Command::Redo) {
-            return;
-        }
-        self.replay.record(command, note, &self.history);
+        self.replay.record(command, note, self.history.snapshot());
         if self.replay.is_complete() {
             self.finish();
         }
@@ -321,8 +306,8 @@ fn main() -> ExitCode {
 fn start() -> Result<(), String> {
     let path = find_regina()?;
     let config = load_config(&path)?;
-    log::info!("{} v{}", config.name, config.version);
-    log::debug!("Configuration: {}", path.display());
+    log::info!("{}_v{}", config.name, config.version);
+    log::debug!("configuration_{}", path.display());
 
     let window = Window {
         title: WINDOW_TITLE,

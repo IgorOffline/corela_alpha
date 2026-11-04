@@ -19,7 +19,7 @@ impl Icon {
             Err(error) => return Err(error.to_string()),
         };
         if image.width == 0 || image.height == 0 {
-            return Err(String::from("the image is empty"));
+            return Err(String::from("the_image_is_empty"));
         }
         make_white(&mut image);
         Ok(Self {

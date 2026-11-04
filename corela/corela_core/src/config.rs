@@ -53,10 +53,7 @@ impl ConfigReader {
         };
         match found {
             Some(value) => Ok(value),
-            None => Err(format!(
-                "{}: missing [{section}] {key}",
-                self.path.display()
-            )),
+            None => Err(format!("{}: missing_{section}_{key}", self.path.display())),
         }
     }
 
@@ -64,7 +61,7 @@ impl ConfigReader {
         match self.value(section, key)?.as_integer() {
             Some(number) => Ok(number),
             None => Err(format!(
-                "{}: [{section}] {key} must be an integer",
+                "{}: {section}_{key}_must_be_an_integer",
                 self.path.display()
             )),
         }
@@ -75,7 +72,7 @@ impl ConfigReader {
         match i32::try_from(number) {
             Ok(narrowed) if (min..=max).contains(&narrowed) => Ok(narrowed),
             _ => Err(format!(
-                "{}: [{section}] {key} = {number} must be within {min}..={max}",
+                "{}: {section}_{key}_{number}_must_be_within_{min}_to_{max}",
                 self.path.display()
             )),
         }
@@ -86,7 +83,7 @@ impl ConfigReader {
         match Key::from_name(name) {
             Some(found) => Ok(found),
             None => Err(format!(
-                "{}: [{SECTION_INPUT}] {key} = {name:?} is not a key name (try \"Escape\", \"Key0\" or \"W\")",
+                "{}: {SECTION_INPUT}_{key}_{name}_is_not_a_key_name_try_Escape_Key0_or_W",
                 self.path.display()
             )),
         }
@@ -100,7 +97,7 @@ impl ConfigReader {
         match self.value(section, key)?.as_str() {
             Some(text) => Ok(text),
             None => Err(format!(
-                "{}: [{section}] {key} must be a string",
+                "{}: {section}_{key}_must_be_a_string",
                 self.path.display()
             )),
         }
@@ -114,7 +111,7 @@ impl ConfigReader {
         match u32::try_from(number) {
             Ok(color) if color <= MAX_COLOR => Ok(color),
             _ => Err(format!(
-                "{}: [{section}] {key} = {number} must be a 0xRRGGBB color",
+                "{}: {section}_{key}_{number}_must_be_a_0xRRGGBB_color",
                 self.path.display()
             )),
         }
@@ -137,7 +134,7 @@ impl ConfigReader {
     fn path(&self, section: &str, key: &str) -> Result<PathBuf, String> {
         let root = match self.path.parent() {
             Some(root) => root,
-            None => return Err(format!("{CONFIG_FILE_NAME} has no parent directory")),
+            None => return Err(format!("{CONFIG_FILE_NAME}_has_no_parent_directory")),
         };
         Ok(root.join(self.string(section, key)?))
     }
