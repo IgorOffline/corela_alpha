@@ -20,4 +20,15 @@ impl Region {
             Self::North => "north",
         }
     }
+
+    #[must_use]
+    pub fn from_code(code: &str) -> Option<Self> {
+        if code == Self::Center.code() {
+            Some(Self::Center)
+        } else if code == Self::North.code() {
+            Some(Self::North)
+        } else {
+            None
+        }
+    }
 }

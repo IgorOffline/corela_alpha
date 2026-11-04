@@ -34,16 +34,7 @@ impl History {
         }
     }
 
-    #[must_use]
-    pub fn is_legal(&self, command: Command) -> bool {
-        match command {
-            Command::Undo => !self.past.is_empty(),
-            Command::Redo => !self.future.is_empty(),
-            Command::Edit(edit) => edit_handler::apply(&self.present, edit).board != self.present,
-        }
-    }
-
-    pub fn execute(&mut self, command: Command) -> String {
+    pub fn execute(&mut self, command: Command) -> Result<String, String> {
         match command {
             Command::Edit(edit) => self.edit(edit),
             Command::Undo => self.undo(),
@@ -51,42 +42,39 @@ impl History {
         }
     }
 
-    fn edit(&mut self, edit: Edit) -> String {
-        let outcome = edit_handler::apply(&self.present, edit);
-        if outcome.board == self.present {
-            return outcome.note;
-        }
+    fn edit(&mut self, edit: Edit) -> Result<String, String> {
+        let outcome = edit_handler::apply(&self.present, edit)?;
         let previous = std::mem::replace(&mut self.present, outcome.board);
         self.past.push(previous);
         self.future.clear();
-        outcome.note
+        Ok(outcome.note)
     }
 
-    fn undo(&mut self) -> String {
+    fn undo(&mut self) -> Result<String, String> {
         let board = match self.past.pop() {
             Some(board) => board,
-            None => return String::from("nothing_to_undo"),
+            None => return Err(String::from("nothing_to_undo")),
         };
         let undone = std::mem::replace(&mut self.present, board);
         self.future.push(undone);
-        format!(
+        Ok(format!(
             "undo_{}_more_to_undo_{}_to_redo",
             self.past.len(),
             self.future.len()
-        )
+        ))
     }
 
-    fn redo(&mut self) -> String {
+    fn redo(&mut self) -> Result<String, String> {
         let board = match self.future.pop() {
             Some(board) => board,
-            None => return String::from("nothing_to_redo"),
+            None => return Err(String::from("nothing_to_redo")),
         };
         let redone = std::mem::replace(&mut self.present, board);
         self.past.push(redone);
-        format!(
+        Ok(format!(
             "redo_{}_to_undo_{}_more_to_redo",
             self.past.len(),
             self.future.len()
-        )
+        ))
     }
 }
