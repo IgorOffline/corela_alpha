@@ -1,5 +1,5 @@
 use crate::dto::{Config, Theme};
-use corela_gfx::{Icon, Key};
+use corela_adahira::{Icon, Key};
 use std::path::{Path, PathBuf};
 
 pub(crate) const CONFIG_FILE_NAME: &str = "regina.toml";
