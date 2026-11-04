@@ -1,2 +1,0 @@
-export XDOTOOL=/home/igor/dev/xdotool-4.20260303.1/xdotool.static
-cargo run

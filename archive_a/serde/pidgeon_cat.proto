@@ -1,8 +1,0 @@
-edition = "2023";
-
-package pidgeon_cat;
-
-message PidgeonCat {
-  int32 id = 1;
-  string name = 2;
-}
