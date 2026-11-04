@@ -1,6 +1,14 @@
+cargo-features = ["profile-rustflags"]
+
 [workspace]
 resolver = "3"
-members = ["corela_core", "corela_gfx"]
+members = [
+    "corela_common",
+    "corela_core",
+    "corela_gfx",
+    "corela_helena",
+    "corela_historia",
+]
 
 [workspace.package]
 version = "0.1.0"
@@ -8,8 +16,12 @@ edition = "2024"
 license-file = "../LICENSE"
 
 [workspace.dependencies]
+corela_common = { path = "corela_common" }
 corela_gfx = { path = "corela_gfx" }
+corela_helena = { path = "corela_helena" }
+corela_historia = { path = "corela_historia" }
 macroquad = { version = "=0.4.16", default-features = false }
+quick-xml = { version = "=0.42.0", default-features = false }
 toml = { version = "1", default-features = false, features = ["std", "parse", "serde"] }
 env_logger = { version = "0.11", default-features = false }
 log = "0.4"
@@ -136,11 +148,19 @@ panic = "abort"
 [profile.dev.package."*"]
 opt-level = 3
 
+# memchr 2.8.3, the newest release, uses core::u8::MAX and core::u32::MAX, which
+# this nightly deprecates; vendored sources are never edited
+[profile.dev.package.memchr]
+rustflags = ["-Adeprecated"]
+
 [profile.release]
 panic = "abort"
 # integer overflow aborts instead of wrapping, like dev builds already do
 # (the runtime counterpart of clang's -ftrapv)
 overflow-checks = true
+
+[profile.release.package.memchr]
+rustflags = ["-Adeprecated"]
 
 [patch.crates-io]
 # === === ===
@@ -189,6 +209,12 @@ winapi_macroquad = { package = "winapi", path = "../../../rust_vendor/macroquad/
 winapi-i686-pc-windows-gnu_macroquad = { package = "winapi-i686-pc-windows-gnu", path = "../../../rust_vendor/macroquad/current/winapi-i686-pc-windows-gnu-0.4.0" }
 winapi-x86_64-pc-windows-gnu_macroquad = { package = "winapi-x86_64-pc-windows-gnu", path = "../../../rust_vendor/macroquad/current/winapi-x86_64-pc-windows-gnu-0.4.0" }
 zlib-rs_macroquad = { package = "zlib-rs", path = "../../../rust_vendor/macroquad/current/zlib-rs-0.6.7" }
+
+# === === ===
+# quick-xml
+# === === ===
+quick-xml_quick-xml = { package = "quick-xml", path = "../../../rust_vendor/quick-xml/current/quick-xml-0.42.0" }
+memchr_quick-xml = { package = "memchr", path = "../../../rust_vendor/quick-xml/current/memchr-2.8.3" }
 
 # === === ===
 # toml

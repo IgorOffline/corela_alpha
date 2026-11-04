@@ -230,7 +230,7 @@ fn load_font() -> Option<Font> {
     match macroquad::text::load_ttf_font_from_bytes(FONT) {
         Ok(font) => Some(font),
         Err(error) => {
-            log::error!("gfx: bundled font failed to load, using macroquad's: {error}");
+            log::error!("gfx: bundled_font_failed_to_load_using_macroquad_font: {error}");
             None
         }
     }

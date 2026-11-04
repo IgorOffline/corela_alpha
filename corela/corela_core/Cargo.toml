@@ -9,7 +9,10 @@ name = "corela_bpmn"
 path = "src/main.rs"
 
 [dependencies]
+corela_common.workspace = true
 corela_gfx.workspace = true
+corela_helena.workspace = true
+corela_historia.workspace = true
 toml.workspace = true
 env_logger.workspace = true
 log.workspace = true
