@@ -1,5 +1,5 @@
 [package]
-name = "corela_historia"
+name = "corela_alexandria"
 version.workspace = true
 edition.workspace = true
 license-file.workspace = true

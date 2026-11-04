@@ -4,9 +4,9 @@ cargo-features = ["profile-rustflags"]
 resolver = "3"
 members = [
     "corela_core",
-    "corela_gfx",
+    "corela_adahira",
     "corela_helena",
-    "corela_historia",
+    "corela_alexandria",
     "corela_model",
 ]
 
@@ -16,9 +16,9 @@ edition = "2024"
 license-file = "LICENSE"
 
 [workspace.dependencies]
-corela_gfx = { path = "corela_gfx" }
+corela_adahira = { path = "corela_adahira" }
 corela_helena = { path = "corela_helena" }
-corela_historia = { path = "corela_historia" }
+corela_alexandria = { path = "corela_alexandria" }
 corela_model = { path = "corela_model" }
 macroquad = { version = "=0.4.16", default-features = false }
 quick-xml = { version = "=0.42.0", default-features = false }

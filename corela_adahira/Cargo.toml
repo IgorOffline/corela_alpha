@@ -1,5 +1,5 @@
 [package]
-name = "corela_gfx"
+name = "corela_adahira"
 version.workspace = true
 edition.workspace = true
 license-file.workspace = true

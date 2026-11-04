@@ -5,11 +5,11 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::time::Instant;
 
-use corela_gfx::{App, Frame, HexLayout, Key, Window};
+use corela_adahira::{App, Frame, HexLayout, Key, Window};
 use corela_helena::History;
-use corela_historia::load::{find_latest_replay, load_replay};
-use corela_historia::save::save_replay;
-use corela_historia::{PlaybackTimer, Replay};
+use corela_alexandria::load::{find_latest_replay, load_replay};
+use corela_alexandria::save::save_replay;
+use corela_alexandria::{PlaybackTimer, Replay};
 use corela_model::entity::{Board, Node};
 use corela_model::message::{Command, Edit};
 
@@ -129,7 +129,7 @@ struct Corela {
     replay: Replay,
     playback_timer: Option<PlaybackTimer>,
     layout: HexLayout,
-    geometry: corela_gfx::Geometry,
+    geometry: corela_adahira::Geometry,
     dark: bool,
     mode: InputMode,
 }
@@ -297,7 +297,7 @@ impl Corela {
 
     fn quit(&self) {
         self.log_action("quit");
-        corela_gfx::quit();
+        corela_adahira::quit();
     }
 }
 
@@ -434,11 +434,11 @@ fn start() -> Result<(), String> {
         width: config.window_width,
         height: config.window_height,
     };
-    let geometry = corela_gfx::geometry();
+    let geometry = corela_adahira::geometry();
     let layout = HexLayout {
         origin: (
-            corela_gfx::small_to_f32(config.window_width) / 2.0,
-            corela_gfx::small_to_f32(config.window_height) / 2.0,
+            corela_adahira::small_to_f32(config.window_width) / 2.0,
+            corela_adahira::small_to_f32(config.window_height) / 2.0,
         ),
         size: geometry.hex_size,
     };
@@ -454,6 +454,6 @@ fn start() -> Result<(), String> {
         dark: true,
         mode: InputMode::None,
     };
-    corela_gfx::run(&window, Box::new(app));
+    corela_adahira::run(&window, Box::new(app));
     Ok(())
 }

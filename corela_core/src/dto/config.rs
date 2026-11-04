@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use corela_gfx::{Icon, Key};
+use corela_adahira::{Icon, Key};
 
 use crate::dto::Theme;
 
