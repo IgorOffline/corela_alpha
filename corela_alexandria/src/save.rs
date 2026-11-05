@@ -2,8 +2,8 @@ use std::fs::OpenOptions;
 use std::io::{Error, ErrorKind, Write};
 use std::path::{Path, PathBuf};
 
-use corela_model::entity::{Node, PlacedNode};
-use corela_model::message::{Command, Edit};
+use corela_ema::entity::{Node, PlacedNode};
+use corela_ema::message::{Command, Edit};
 use quick_xml::Writer;
 use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, Event};
 

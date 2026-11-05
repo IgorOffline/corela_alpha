@@ -6,7 +6,7 @@ version = "0.1.0"
 icon_chevron = "corela_adahira/asset/remixicon/arrow-right-double-line/36.png"
 
 [replay]
-replay_dir = "corela_replay"
+replay_dir = "corela_vita"
 replay_last_action = 24
 
 [gfx]

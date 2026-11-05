@@ -1,5 +1,5 @@
-use corela_model::entity::{Board, Node, PlacedNode, Region};
-use corela_model::message::Edit;
+use corela_ema::entity::{Board, Node, PlacedNode, Region};
+use corela_ema::message::Edit;
 
 const CENTER_GATE: (i32, i32) = (0, -4);
 const NORTH_GATE: (i32, i32) = (0, 4);

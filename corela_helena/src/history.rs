@@ -1,6 +1,6 @@
-use corela_model::dto::Snapshot;
-use corela_model::entity::Board;
-use corela_model::message::{Command, Edit};
+use corela_ema::dto::Snapshot;
+use corela_ema::entity::Board;
+use corela_ema::message::{Command, Edit};
 
 use crate::edit_handler;
 

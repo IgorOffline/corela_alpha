@@ -4,9 +4,9 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::SystemTime;
 
-use corela_model::dto::Snapshot;
-use corela_model::entity::{Board, Node, PlacedNode, Region};
-use corela_model::message::{Command, Edit};
+use corela_ema::dto::Snapshot;
+use corela_ema::entity::{Board, Node, PlacedNode, Region};
+use corela_ema::message::{Command, Edit};
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Reader, XmlVersion};
 
