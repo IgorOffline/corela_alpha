@@ -6,12 +6,12 @@ use std::process::ExitCode;
 use std::time::Instant;
 
 use corela_adahira::{App, Frame, HexLayout, Key, Window};
-use corela_helena::History;
 use corela_alexandria::load::{find_latest_replay, load_replay};
 use corela_alexandria::save::save_replay;
 use corela_alexandria::{PlaybackTimer, Replay};
-use corela_model::entity::{Board, Node};
-use corela_model::message::{Command, Edit};
+use corela_ema::entity::{Board, Node};
+use corela_ema::message::{Command, Edit};
+use corela_helena::History;
 
 use crate::config::{CONFIG_FILE_NAME, KEY_NAME, KEY_VERSION, SECTION_META, load_config};
 use dto::{Config, Theme};

@@ -3,11 +3,11 @@ cargo-features = ["profile-rustflags"]
 [workspace]
 resolver = "3"
 members = [
-    "corela_core",
+    "corela_luna",
     "corela_adahira",
     "corela_helena",
     "corela_alexandria",
-    "corela_model",
+    "corela_ema",
 ]
 
 [workspace.package]
@@ -19,7 +19,7 @@ license-file = "LICENSE"
 corela_adahira = { path = "corela_adahira" }
 corela_helena = { path = "corela_helena" }
 corela_alexandria = { path = "corela_alexandria" }
-corela_model = { path = "corela_model" }
+corela_ema = { path = "corela_ema" }
 macroquad = { version = "=0.4.16", default-features = false }
 quick-xml = { version = "=0.42.0", default-features = false }
 toml = { version = "1", default-features = false, features = ["std", "parse", "serde"] }

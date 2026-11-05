@@ -1,5 +1,5 @@
 [package]
-name = "corela_model"
+name = "corela_ema"
 version.workspace = true
 edition.workspace = true
 license-file.workspace = true

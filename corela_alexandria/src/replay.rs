@@ -1,5 +1,5 @@
-use corela_model::dto::Snapshot;
-use corela_model::message::Command;
+use corela_ema::dto::Snapshot;
+use corela_ema::message::Command;
 
 use crate::action::Action;
 
